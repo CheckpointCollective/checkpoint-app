@@ -72,7 +72,7 @@
         </form>
         <p class="footer-text"><a onclick="ekranDegistir('kayit')">Kayıt Ol</a></p>
         <button class="bug-btn" onclick="openBugModal()">⚠️ Bir sorun mu var? Bildir.</button>
-        <p style="font-size:10px; color:#555; margin-top:15px;">Admin: admin@cp.com / cp2025</p>
+    
     </div>
 
     <div id="registerContainer" class="container hidden">
@@ -314,7 +314,7 @@
 
             // Admin Girişi
             if(email === 'admin@cp.com') {
-                if(password === 'cp2025') {
+                if(password === 'CP2025..2025') {
                     if(rememberMe) localStorage.setItem('adminLogged', 'true');
                     ekranDegistir('admin'); adminListesiniYukle(); loadBugReports();
                 } else alert("❌ Hata: Admin şifresi yanlış!");
