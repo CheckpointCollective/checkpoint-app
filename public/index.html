@@ -5,83 +5,110 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkpoint Collective</title>
     <link rel="icon" href="CP_Logo.png" type="image/jpeg">
-    <link rel="stylesheet" href="style.css"> 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-    
+    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
+
     <style>
-        /* --- SEKME SİSTEMİ --- */
-        .bottom-nav {
-            position: fixed; bottom: 0; left: 0; width: 100%;
-            background-color: #1F1F1F; border-top: 1px solid #333;
-            display: flex; justify-content: space-around; padding: 10px 0;
-            z-index: 1000;
+        /* --- 1. GENEL AYARLAR --- */
+        * { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
+        body {
+            background-color: #0B132B; font-family: 'Inter', sans-serif; color: #FFFFFF;
+            display: flex; justify-content: center; align-items: flex-start;
+            min-height: 100vh; padding: 20px; padding-bottom: 90px;
         }
-        .nav-item {
-            color: #888; text-align: center; cursor: pointer; flex: 1;
-            font-size: 12px; font-family: 'Poppins', sans-serif;
+        .hidden { display: none !important; }
+        .container { width: 100%; max-width: 450px; margin: 0 auto; text-align: center; animation: fadeIn 0.4s ease-out; }
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
+
+        /* --- 2. GÖRSEL VE TİPOGRAFİ --- */
+        .logo { width: 160px; border-radius: 12px; box-shadow: 0 4px 15px rgba(0,0,0,0.3); margin-bottom: 20px; }
+        h1, h2, h3 { font-family: 'Poppins', sans-serif; color: #FFFFFF; margin-bottom: 10px; letter-spacing: 0.5px; }
+        .subtitle { color: #EDEDED; font-size: 14px; margin-bottom: 30px; opacity: 0.8; }
+        .welcome-title { color: #FF6B35; margin-bottom: 15px; }
+
+        /* --- 3. FORMLAR --- */
+        .input-group { margin-bottom: 15px; text-align: left; }
+        label { display: block; margin-bottom: 5px; font-size: 12px; color: #EDEDED; font-weight: 600; text-transform: uppercase; }
+        input, select, textarea {
+            width: 100%; padding: 14px; border-radius: 10px; border: 1px solid #333;
+            background-color: #1F1F1F; color: #FFFFFF; font-family: 'Inter', sans-serif;
+            font-size: 16px; outline: none; transition: 0.3s;
         }
-        .nav-item.active { color: #FF6B35; font-weight: bold; }
-        .nav-icon { font-size: 20px; display: block; margin-bottom: 2px; }
+        input:focus, select:focus, textarea:focus { border-color: #FF6B35; box-shadow: 0 0 8px rgba(255, 107, 53, 0.2); }
         
-        .tab-content { padding-bottom: 80px; display: none; animation: fadeIn 0.3s; }
+        .remember-me-container { display: flex; align-items: center; margin-bottom: 20px; cursor: pointer; text-align: left; }
+        .remember-me-container input { width: auto; margin-right: 10px; accent-color: #FF6B35; transform: scale(1.2); }
+        .remember-me-container label { margin-bottom: 0; cursor: pointer; text-transform: none; font-size: 14px; color: #ccc; }
+
+        /* --- 4. BUTONLAR --- */
+        .btn-primary {
+            width: 100%; padding: 16px; background-color: #FF6B35; color: #FFFFFF;
+            border: none; border-radius: 10px; font-family: 'Poppins', sans-serif;
+            font-weight: bold; font-size: 16px; cursor: pointer; margin-top: 5px;
+            transition: transform 0.2s;
+        }
+        .btn-primary:active { transform: scale(0.97); }
+        .btn-danger { background-color: #d32f2f; width: auto; padding: 10px 15px; margin-left: 5px; }
+        
+        a { color: #FF6B35; text-decoration: none; font-weight: bold; cursor: pointer; }
+        .footer-text { margin-top: 20px; font-size: 13px; color: #888; }
+        .bug-btn { background: none; border: none; color: #666; font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 15px; transition: 0.3s; }
+        .bug-btn:hover { color: #FF6B35; }
+
+        /* --- 5. ALT MENÜ --- */
+        .bottom-nav {
+            position: fixed; bottom: 0; left: 0; width: 100%; background-color: #161b2e;
+            border-top: 1px solid #333; display: flex; justify-content: space-around;
+            padding: 12px 0; z-index: 1000; backdrop-filter: blur(10px);
+        }
+        .nav-item { color: #888; text-align: center; cursor: pointer; flex: 1; font-size: 11px; font-family: 'Poppins', sans-serif; transition: 0.3s; }
+        .nav-item.active { color: #FF6B35; font-weight: bold; transform: translateY(-2px); }
+        .nav-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+        .tab-content { display: none; animation: fadeIn 0.3s; padding-bottom: 20px; }
         .tab-content.active-tab { display: block; }
 
-        /* --- TAKVİM --- */
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 4px; margin-bottom: 20px; }
+        /* --- 6. TAKVİM --- */
+        .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #1F1F1F; padding: 10px; border-radius: 8px; border: 1px solid #333; }
+        .cal-btn { background: none; border: none; color: #FF6B35; font-size: 20px; cursor: pointer; }
+        .cal-title { font-weight: bold; font-size: 14px; }
+        .view-toggle { display: flex; background: #1F1F1F; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; }
+        .toggle-btn { flex: 1; border: none; background: none; color: #888; padding: 10px; cursor: pointer; font-size: 12px; }
+        .toggle-btn.active { background: #FF6B35; color: white; font-weight: bold; }
+        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
         .day-header { text-align: center; font-size: 10px; color: #666; padding-bottom: 5px; }
         .day-card {
-            background: #252525; border-radius: 4px; padding: 4px;
-            text-align: center; min-height: 40px; display: flex;
-            flex-direction: column; align-items: center; justify-content: center;
-            border: 1px solid #333; font-size: 12px; cursor: pointer;
+            background: #1F1F1F; border-radius: 6px; padding: 5px; text-align: center;
+            min-height: 45px; display: flex; flex-direction: column; align-items: center;
+            justify-content: center; border: 1px solid #333; font-size: 12px; cursor: pointer; transition: 0.2s;
         }
         .day-other-month { opacity: 0.3; }
-        .day-today { border-color: #FF6B35; box-shadow: 0 0 4px #FF6B35; }
-        .day-done { background: rgba(76, 175, 80, 0.2); border-color: #4caf50; } 
-        .day-missed { background: rgba(244, 67, 54, 0.1); border-color: #d32f2f; }
-        .day-rest { background: rgba(158, 158, 158, 0.1); border-color: #9e9e9e; color: #aaa; }
+        .day-today { border-color: #FF6B35 !important; box-shadow: 0 0 8px rgba(255, 107, 53, 0.3); }
+        .day-done { background: rgba(76, 175, 80, 0.2); border-color: #4caf50; color: #a5d6a7; }
+        .day-missed { background: rgba(244, 67, 54, 0.15); border-color: #d32f2f; color: #ef9a9a; }
+        .day-rest { background: rgba(158, 158, 158, 0.15); border-color: #9e9e9e; color: #ccc; }
         .day-active-rest { background: rgba(221, 160, 221, 0.15); border-color: #DDA0DD; color: #DDA0DD; }
 
-        /* --- LİSTE --- */
-        .history-table { width: 100%; border-collapse: collapse; font-size: 12px; }
-        .history-table td { padding: 8px; border-bottom: 1px solid #333; color: #ccc; vertical-align: top; }
-        .status-badge { padding: 2px 6px; border-radius: 4px; font-size: 10px; font-weight: bold; display:inline-block; margin-bottom:4px;}
-        .bg-green { background: #4caf50; color: white; }
-        .bg-red { background: #d32f2f; color: white; }
-        .bg-gray { background: #777; color: white; }
-        .bg-purple { background: #800080; color: white; }
-        
-        .coach-note { font-size: 11px; color: #FFBC42; font-style: italic; margin-top: 2px; display: block; }
-        .extra-activity { font-size: 11px; color: #DDA0DD; margin-top: 4px; display: block; font-weight: bold; }
+        /* --- 7. LİSTE VE TABLO --- */
+        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
+        .history-table td { padding: 12px 8px; border-bottom: 1px solid #333; color: #ccc; vertical-align: top; }
+        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; margin-bottom: 5px; text-transform: uppercase; }
+        .bg-green { background: #2e7d32; color: white; }
+        .bg-red { background: #c62828; color: white; }
+        .bg-gray { background: #616161; color: white; }
+        .bg-purple { background: #7B1FA2; color: white; }
+        .coach-note { font-size: 11px; color: #FFBC42; font-style: italic; display: block; margin-top: 4px; border-left: 2px solid #FFBC42; padding-left: 6px;}
+        .extra-activity { font-size: 11px; color: #DDA0DD; font-weight: bold; display: block; margin-top: 4px; }
+        .strava-btn { color: #FC4C02; font-weight: bold; text-decoration: none; font-size: 11px; border: 1px solid #FC4C02; padding: 2px 6px; border-radius: 4px; display: inline-block; margin-top: 2px; }
+        .comment-btn { background: none; border: 1px solid #555; color: #aaa; cursor: pointer; border-radius: 4px; padding: 3px 8px; font-size: 10px; margin-top: 5px; }
 
-        /* Butonlar */
-        .cal-btn { background: none; border: none; color: #FF6B35; font-size: 18px; cursor: pointer; font-weight: bold; }
-        .cal-title { font-size: 14px; font-weight: bold; color: white; }
-        .view-toggle { display: flex; background: #1F1F1F; border-radius: 5px; overflow: hidden; margin-bottom: 10px; }
-        .toggle-btn { flex: 1; border: none; background: none; color: #888; padding: 8px; cursor: pointer; font-size: 12px; }
-        .toggle-btn.active { background: #FF6B35; color: white; }
-        .comment-btn { background: none; border: 1px solid #888; color: #ccc; cursor: pointer; border-radius: 4px; padding: 2px 6px; font-size: 11px; margin-top: 5px; }
-
-        /* --- MODAL --- */
-        .modal-overlay {
-            position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-            background: rgba(0,0,0,0.8); z-index: 2000;
-            display: none; justify-content: center; align-items: center;
-        }
-        .modal-box {
-            background: #1F1F1F; width: 90%; max-width: 400px; padding: 20px;
-            border-radius: 10px; border: 1px solid #FF6B35; text-align: left;
-        }
-        .bug-btn {
-            background: none; border: none; color: #777; font-size: 11px; cursor: pointer; text-decoration: underline; margin-top: 10px;
-        }
-        .bug-btn:hover { color: #FF6B35; }
-        .bug-item { background: #333; padding: 10px; margin-bottom: 5px; border-radius: 5px; font-size: 12px; }
-        .bug-meta { color: #888; font-size: 10px; margin-bottom: 3px; }
-
-        .remember-me-container { display: flex; align-items: center; margin-bottom: 15px; cursor: pointer; }
-        .remember-me-container input { width: auto; margin-right: 8px; accent-color: #FF6B35; }
-        .remember-me-container label { margin-bottom: 0; cursor: pointer; text-transform: none; font-size: 13px; color: #ccc; }
+        /* --- 8. MODAL --- */
+        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s; }
+        .modal-box { background: #161b2e; width: 90%; max-width: 400px; padding: 25px; border-radius: 15px; border: 1px solid #FF6B35; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
+        .bug-item { background: #1F1F1F; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 3px solid #d32f2f; font-size: 12px; }
+        .bug-meta { color: #888; font-size: 10px; margin-bottom: 4px; display: block; }
     </style>
 </head>
 <body>
@@ -89,7 +116,7 @@
     <div id="bugModal" class="modal-overlay">
         <div class="modal-box">
             <h3 style="color:#FF6B35; margin-bottom:10px;">⚠️ Sorun Bildir</h3>
-            <textarea id="bugText" rows="4" style="width:100%; padding:10px; background:#252525; color:white; border:1px solid #444; border-radius:5px;" placeholder="Sorunu buraya yaz..."></textarea>
+            <textarea id="bugText" rows="4" placeholder="Sorunu buraya yaz..." style="width:100%; padding:10px; background:#252525; color:white; border:1px solid #444; border-radius:5px;"></textarea>
             <div style="display:flex; gap:10px; margin-top:10px;">
                 <button class="btn-primary" onclick="sendBugReport()" style="margin-top:0;">Gönder</button>
                 <button class="btn-primary" onclick="closeBugModal()" style="margin-top:0; background:#444;">İptal</button>
@@ -98,7 +125,7 @@
     </div>
 
     <div id="loginContainer" class="container">
-        <img src="CP_Logo.png" alt="Checkpoint Logo" class="logo" style="width:150px; border-radius:10px; margin-bottom:20px;">
+        <img src="CP_Logo.png" alt="Checkpoint Logo" class="logo">
         <h1>Giriş Yap</h1>
         <form id="loginForm">
             <div class="input-group"><label>E-Posta</label><input type="email" id="email" required></div>
@@ -111,7 +138,7 @@
         </form>
         <p class="footer-text"><a onclick="ekranDegistir('kayit')">Kayıt Ol</a></p>
         <button class="bug-btn" onclick="openBugModal()">⚠️ Bir sorun mu var? Bildir.</button>
-        <p style="font-size:10px; color:#555; margin-top:15px;">Admin: admin@cp.com / cp2025</p>
+    
     </div>
 
     <div id="registerContainer" class="container hidden">
@@ -131,10 +158,10 @@
             <label>Öğrenci Seç:</label>
             <div style="display:flex;">
                 <select id="studentSelect" onchange="secilenOgrenciyiGetir()"><option>Yükleniyor...</option></select>
-                <button class="btn-primary btn-danger" onclick="ogrenciyiSil()" style="background:#d32f2f; width:50px; margin-left:5px;">🗑️</button>
+                <button class="btn-primary btn-danger" onclick="ogrenciyiSil()" style="width:50px; margin-left:5px;">🗑️</button>
             </div>
         </div>
-        <div id="studentStats" style="background:#252525; padding:15px; border-radius:10px; margin-bottom:20px; font-size:14px; color:#ccc; display:none; text-align:left; border-left: 3px solid #FF6B35;"></div>
+        <div id="studentStats" style="background:#252525; padding:15px; border-radius:10px; margin-bottom:20px; display:none; text-align:left; border-left: 3px solid #FF6B35;"></div>
         <div class="input-group">
             <label>Bugünün Programı (<span id="bugunTarihAdmin"></span>):</label>
             <textarea id="workoutInput" rows="4"></textarea>
@@ -151,8 +178,9 @@
         </div>
         <div style="display:flex; gap:10px;">
             <button class="btn-primary" onclick="kaydet()" style="flex:2;">YAYINLA 🚀</button>
-            <button class="btn-primary" onclick="setRestDay()" style="flex:1; background:#4A90E2; border:none;">💤 OFF</button>
+            <button class="btn-primary" onclick="setRestDay()" style="flex:1; background:#4A90E2;">💤 OFF</button>
         </div>
+        
         <div style="margin-top:30px; text-align:left;">
             <h3 style="font-size:16px; color:#fff;">📅 Öğrenci Takvimi</h3>
             <div class="view-toggle">
@@ -167,11 +195,10 @@
             <div class="calendar-grid" id="calendarGridAdmin"></div>
             <h4 style="color:#FF6B35; font-size:12px; margin-bottom:5px;">Dönem Özeti</h4>
             <div style="max-height:300px; overflow-y:auto; background:#1F1F1F; border-radius:10px; padding:10px;">
-                <table class="history-table">
-                    <tbody id="adminHistoryTable"></tbody>
-                </table>
+                <table class="history-table"><tbody id="adminHistoryTable"></tbody></table>
             </div>
         </div>
+
         <div style="margin-top:30px; text-align:left;">
             <h3 style="font-size:16px; color:#d32f2f;">🐛 Gelen Bildirimler</h3>
             <div id="bugReportList" style="max-height:200px; overflow-y:auto; border-top:1px solid #333; padding-top:10px;"></div>
@@ -189,9 +216,10 @@
             <h3 style="font-size:16px; color:#fff; text-align:left;">Bugünün Görevi (<span id="bugunTarihOgrenci"></span>)</h3>
             <div style="background:#1F1F1F; padding:20px; border-radius:10px; text-align:left; border-left:4px solid #FF6B35; min-height:100px; white-space:pre-line; margin-bottom:15px;" id="workoutDisplay">Yükleniyor...</div>
             
-       <a id="stravaConnectBtn" href="/auth/strava" style="display:block; background:#FC4C02; color:white; padding:15px; border-radius:10px; text-decoration:none; font-weight:bold; margin-bottom:20px;">
-    🔗 Strava ile Bağlan
-</a>
+            <a id="stravaConnectBtn" href="/auth/strava" style="display:block; background:#FC4C02; color:white; padding:15px; border-radius:10px; text-decoration:none; font-weight:bold; margin-bottom:20px;">
+                🔗 Strava ile Bağlan
+            </a>
+
             <button class="btn-primary" onclick="goreviTamamla()">Kaydet ve Tamamla ✅</button>
             
             <hr style="border:1px solid #333; margin:20px 0;">
@@ -230,9 +258,7 @@
             <div class="calendar-grid" id="calendarGridStudent"></div>
             <h4 style="color:#FF6B35; font-size:12px; margin-bottom:5px;">Dönem Detayları</h4>
             <div style="max-height:300px; overflow-y:auto; background:#1F1F1F; border-radius:10px; padding:10px;">
-                <table class="history-table">
-                    <tbody id="studentHistoryTable"></tbody>
-                </table>
+                <table class="history-table"><tbody id="studentHistoryTable"></tbody></table>
             </div>
         </div>
 
@@ -255,15 +281,10 @@
         </div>
     </div>
 
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
-    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-auth-compat.js"></script>
-    <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
-
     <script>
-        // --- 1. AYARLAR (KENDİ BİLGİLERİNİ GİR) ---
+        // --- AYARLAR (BURAYI KENDİ BİLGİLERİNLE DOLDUR) ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAMi1g8d-nUagKV1bMjSjtOyJKX19s76BY",
+            apiKey: "AIzaSyAMi1g8d-nUagKV1bMjSjtOyJKX19s76BY", // Senin Firebase anahtarın
             authDomain: "checkpoint-app-1abcd.firebaseapp.com",
             projectId: "checkpoint-app-1abcd",
             storageBucket: "checkpoint-app-1abcd.firebasestorage.app",
@@ -271,22 +292,22 @@
             appId: "1:840395107034:web:08492488e1a20205a293e3"
         };
         
-        const EMAILJS_PUBLIC_KEY = "USER_ID_BURAYA"; 
-        const EMAILJS_SERVICE_ID = "SERVICE_ID_BURAYA";
-        const EMAILJS_TEMPLATE_ID = "TEMPLATE_ID_BURAYA";
-        const COACH_EMAIL = "senin_gercek_mailin@gmail.com";
+        const EMAILJS_PUBLIC_KEY = "USER_ID_BURAYA"; // EmailJS Public Key
+        const EMAILJS_SERVICE_ID = "SERVICE_ID_BURAYA"; // EmailJS Service ID
+        const EMAILJS_TEMPLATE_ID = "TEMPLATE_ID_BURAYA"; // EmailJS Template ID
+        const COACH_EMAIL = "senin_gercek_mailin@gmail.com"; // Koç Maili
 
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
         try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.log("EmailJS başlatılamadı."); }
 
-        let studentCalDate = new Date();
-        let studentCalView = 'week';
-        let adminCalDate = new Date();
-        let adminCalView = 'week';
+        // Değişkenler
+        let studentCalDate = new Date(); let studentCalView = 'week';
+        let adminCalDate = new Date(); let adminCalView = 'week';
         let adminSelectedUserEmail = null;
 
+        // Tarih Fonksiyonu
         function getBugunTarihi() {
             const now = new Date();
             const year = now.getFullYear();
@@ -299,6 +320,7 @@
         if(document.getElementById('bugunTarihAdmin')) document.getElementById('bugunTarihAdmin').innerText = bugun;
         if(document.getElementById('bugunTarihOgrenci')) document.getElementById('bugunTarihOgrenci').innerText = bugun;
 
+        // Ekran Geçişleri
         const screens = {
             giris: document.getElementById('loginContainer'),
             kayit: document.getElementById('registerContainer'),
@@ -310,6 +332,7 @@
             Object.values(screens).forEach(el => el.classList.add('hidden'));
             screens[hedef].classList.remove('hidden');
         }
+        
         function switchTab(tabId, btnElement) {
             document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
             document.getElementById(tabId).classList.add('active-tab');
@@ -318,72 +341,56 @@
             if(tabId === 'tab-history' && auth.currentUser) renderUniversalCalendar(auth.currentUser.email, 'student');
         }
 
-       // --- SAYFA YÜKLENDİĞİNDE ÇALIŞACAK KISIM (GÜNCELLENDİ) ---
+        // --- AÇILIŞ KONTROLLERİ (STRAVA VE OTO-GİRİŞ) ---
         window.onload = function() {
-            
-            // 1. Admin Oto-Giriş Kontrolü
+            // Admin Girişi
             if(localStorage.getItem('adminLogged') === 'true') {
-                ekranDegistir('admin'); 
-                adminListesiniYukle(); 
-                loadBugReports();
+                ekranDegistir('admin'); adminListesiniYukle(); loadBugReports();
             }
             
-            // 2. Öğrenci ve Strava Kontrolü
+            // Öğrenci Girişi ve Strava Yakalama
             auth.onAuthStateChanged(function(user) {
                 if (user && localStorage.getItem('adminLogged') !== 'true') { 
                     
-                    // Önce öğrenci ekranını aç ve verileri yükle
-                    ekranDegistir('ogrenci'); // Ekranı açmayı garantiye alalım
-                    loadStudentData(user.email);
-
-                    // --- URL'DE STRAVA ANAHTARI VAR MI? ---
+                    // Strava Token Kontrolü
                     const urlParams = new URLSearchParams(window.location.search);
                     const stravaToken = urlParams.get('strava_token');
                     
                     if (stravaToken) {
-                        console.log("Strava Token Yakalandı, kaydediliyor...");
-                        
-                        // Anahtarı veritabanına kaydediyoruz
                         db.collection("users").doc(user.email).update({
                             stravaConnected: true,
                             stravaAccessToken: stravaToken
                         }).then(() => {
-                            // URL'i temizle (Token gizlensin)
                             window.history.replaceState({}, document.title, "/");
-                            
                             alert("✅ Strava Başarıyla Bağlandı!");
-                            
-                            // Sayfayı yenile ki buton yeşil olsun
-                            location.reload();
-                        }).catch(err => {
-                            console.error("Strava Kayıt Hatası:", err);
-                            alert("Bağlantı hatası: " + err.message);
+                            location.href = "/"; // Sayfayı yenile
                         });
+                    } else {
+                        loadStudentData(user.email); // Normal veri yükleme
                     }
                 }
             });
         };
 
+        // --- FONKSİYONLAR ---
         function sendMail(toEmail, subject, message) {
             if(EMAILJS_PUBLIC_KEY === "USER_ID_BURAYA") return;
             const templateParams = { to_email: toEmail, subject: subject, message: message };
-            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams).then(
-                function(response) { console.log('Mail gönderildi!', response.status, response.text); },
-                function(error) { console.log('Mail hatası:', error); }
-            );
+            emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, templateParams);
         }
 
         function openBugModal() { document.getElementById('bugModal').style.display = 'flex'; }
         function closeBugModal() { document.getElementById('bugModal').style.display = 'none'; }
         function sendBugReport() {
             const note = document.getElementById('bugText').value;
-            if(!note) return alert("Lütfen bir şeyler yazın.");
+            if(!note) return alert("Lütfen yazın.");
             const user = auth.currentUser ? auth.currentUser.email : "Giriş Ekranı";
             db.collection("bug_reports").add({ user: user, note: note, time: new Date() }).then(() => {
-                alert("Teşekkürler! ✅"); document.getElementById('bugText').value = ""; closeBugModal();
-            }).catch(err => alert("Hata: " + err));
+                alert("Gönderildi! ✅"); document.getElementById('bugText').value = ""; closeBugModal();
+            });
         }
 
+        // Giriş
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim().toLowerCase();
@@ -401,9 +408,10 @@
             const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
             auth.setPersistence(persistence).then(() => {
                 return auth.signInWithEmailAndPassword(email, password);
-            }).then((cred) => { loadStudentData(email); }).catch(err => alert("Giriş Hatası: " + err.message));
+            }).catch(err => alert("Giriş Hatası: " + err.message));
         });
 
+        // Veri Yükleme
         function loadStudentData(email) {
             db.collection("users").doc(email).get().then(doc => {
                 if(doc.exists) {
@@ -415,22 +423,21 @@
                     document.getElementById('pYas').value = veri.yas || "";
                     document.getElementById('pHedef').value = veri.hedef || "";
                     
-                    // --- GÜNCELLENEN KISIM: STRAVA BUTON KONTROLÜ ---
+                    // Strava Buton Durumu
                     const stravaBtn = document.getElementById('stravaConnectBtn');
-                    if (veri.stravaConnected) {
-                        if(stravaBtn) {
-                            stravaBtn.innerHTML = "✅ Strava Bağlı";
-                            stravaBtn.style.background = "#4caf50";
-                            stravaBtn.href = "#"; 
-                        }
+                    if (veri.stravaConnected && stravaBtn) {
+                        stravaBtn.innerHTML = "✅ Strava Bağlı";
+                        stravaBtn.style.background = "#4caf50";
+                        stravaBtn.href = "#"; 
+                        stravaBtn.style.pointerEvents = "none";
                     }
-                    // ----------------------------------------------
 
                     const historyRef = db.collection("users").doc(email).collection("history");
                     historyRef.doc(bugun).onSnapshot(doc => {
                         if(doc.exists) {
                             const data = doc.data();
                             document.getElementById('workoutDisplay').innerText = data.program;
+                            if(data.stravaLink) document.getElementById('stravaLinkInput').value = data.stravaLink;
                             if(data.durum === 'rest') document.getElementById('workoutDisplay').innerHTML = "💤 <strong>Dinlenme Günü</strong><br>Vücudunu dinle.";
                         } else {
                             document.getElementById('workoutDisplay').innerText = "Bugün antrenman yok.";
@@ -441,7 +448,7 @@
                     historyRef.where("durum", "==", "tamamlandi").get().then(snap => {
                         document.getElementById('streakCount').innerText = snap.size;
                     });
-                } else { alert("Kullanıcı veritabanında yok."); auth.signOut(); }
+                } else { auth.signOut(); }
             });
         }
 
@@ -450,13 +457,14 @@
             const email = document.getElementById('regEmail').value.trim();
             const password = document.getElementById('regPass').value;
             const name = document.getElementById('regName').value;
-            auth.createUserWithEmailAndPassword(email, password).then((cred) => {
+            auth.createUserWithEmailAndPassword(email, password).then(() => {
                 db.collection("users").doc(email).set({ isim: name, email: email, rol: 'ogrenci' }).then(() => {
                     alert("Kayıt başarılı! Giriş yap."); auth.signOut(); ekranDegistir('giris');
                 });
             }).catch(err => alert("Hata: " + err.message));
         });
 
+        // Harici Aktivite
         function hariciEkle() {
             const type = document.getElementById('extraType').value;
             const note = document.getElementById('extraNote').value;
@@ -467,9 +475,7 @@
                 if(doc.exists) {
                     let data = doc.data();
                     let newExtra = data.ekstra ? data.ekstra + ", " + text : text;
-                    let newStatus = data.durum;
-                    if(data.durum === 'rest') newStatus = 'active-rest';
-                    else if(data.durum === 'bekliyor') newStatus = 'tamamlandi';
+                    let newStatus = (data.durum === 'rest') ? 'active-rest' : 'tamamlandi';
                     db.collection("users").doc(user.email).collection("history").doc(bugun).update({ ekstra: newExtra, durum: newStatus });
                 } else {
                     db.collection("users").doc(user.email).collection("history").doc(bugun).set({
@@ -478,7 +484,7 @@
                 }
             }).then(() => { 
                 alert("Eklendi! 🧘"); renderUniversalCalendar(user.email, 'student'); 
-                sendMail(COACH_EMAIL, "Ekstra Aktivite: " + user.email, user.email + " harici aktivite ekledi: " + text);
+                sendMail(COACH_EMAIL, "Ekstra Aktivite", user.email + " harici aktivite ekledi: " + text);
             });
         }
 
@@ -490,6 +496,7 @@
             }).then(() => { alert("OFF DAY 💤"); secilenOgrenciyiGetir(); });
         }
 
+        // Takvim Render (Özetlenmiş)
         function renderUniversalCalendar(email, role) {
             let currentDate = (role === 'student') ? studentCalDate : adminCalDate;
             let currentView = (role === 'student') ? studentCalView : adminCalView;
@@ -502,40 +509,41 @@
             const title = document.getElementById(titleId);
             grid.innerHTML = "Yükleniyor..."; list.innerHTML = "";
 
-            let startDate, datesToRender = [];
+            let startDate;
             if (currentView === 'week') {
                 let day = currentDate.getDay(); let diff = currentDate.getDate() - day + (day == 0 ? -6 : 1); 
                 startDate = new Date(currentDate); startDate.setDate(diff);
                 let displayMonth = startDate.toLocaleDateString('tr-TR', { month: 'long' });
                 title.innerText = `${startDate.getDate()} - ${new Date(startDate.getFullYear(), startDate.getMonth(), startDate.getDate()+6).getDate()} ${displayMonth}`;
-                for(let i=0; i<7; i++) {
-                    let d = new Date(startDate); d.setDate(startDate.getDate() + i);
-                    let y = d.getFullYear(); let m = String(d.getMonth()+1).padStart(2,'0'); let dd = String(d.getDate()).padStart(2,'0');
-                    datesToRender.push(`${y}-${m}-${dd}`);
-                }
             } else {
                 startDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), 1);
                 let displayMonth = startDate.toLocaleDateString('tr-TR', { month: 'long', year: 'numeric' });
                 title.innerText = displayMonth;
-                let firstDayIndex = startDate.getDay(); if(firstDayIndex === 0) firstDayIndex = 7; 
-                for(let i=1; i<firstDayIndex; i++) datesToRender.push("empty");
-                let daysInMonth = new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
-                for(let i=1; i<=daysInMonth; i++) {
-                    let d = new Date(currentDate.getFullYear(), currentDate.getMonth(), i);
-                    let y = d.getFullYear(); let m = String(d.getMonth()+1).padStart(2,'0'); let dd = String(d.getDate()).padStart(2,'0');
-                    datesToRender.push(`${y}-${m}-${dd}`);
-                }
             }
 
             db.collection("users").doc(email).collection("history").get().then(snapshot => {
                 let historyMap = {};
                 snapshot.forEach(doc => { historyMap[doc.id] = doc.data(); });
                 grid.innerHTML = "";
-                datesToRender.forEach(dateStr => {
-                    if(dateStr === "empty") { grid.innerHTML += `<div class="day-card day-other-month"></div>`; return; }
-                    let statusClass = "", content = "", dayNum = dateStr.split('-')[2];
+                
+                // Takvim Döngüsü (Haftalık veya Aylık)
+                let loopCount = (currentView === 'week') ? 7 : new Date(currentDate.getFullYear(), currentDate.getMonth()+1, 0).getDate();
+                let firstDayIndex = startDate.getDay(); if(firstDayIndex===0) firstDayIndex=7;
+                
+                if(currentView === 'month') for(let i=1; i<firstDayIndex; i++) grid.innerHTML += `<div class="day-card day-other-month"></div>`;
+
+                for(let i=0; i<loopCount; i++) {
+                    let d = new Date(startDate); 
+                    if(currentView==='week') d.setDate(startDate.getDate() + i);
+                    else d.setDate(i+1);
+                    
+                    let y = d.getFullYear(); let m = String(d.getMonth()+1).padStart(2,'0'); let dd = String(d.getDate()).padStart(2,'0');
+                    let dateStr = `${y}-${m}-${dd}`;
+                    
+                    let statusClass = ""; let content = "";
                     if(dateStr === bugun) statusClass += " day-today";
-                    let hasData = false, item = null;
+                    let hasData = false; let item = null;
+
                     if(historyMap[dateStr]) {
                         hasData = true; item = historyMap[dateStr];
                         if(item.durum === 'tamamlandi') { statusClass += " day-done"; content = "✅"; }
@@ -543,10 +551,13 @@
                         else if(item.durum === 'active-rest') { statusClass += " day-active-rest"; content = "🧘"; }
                         else { statusClass += " day-missed"; content = "🔴"; }
                     }
-                    if(currentView === 'month') content = `<span style="font-weight:bold">${parseInt(dayNum)}</span><br>${content}`;
-                    else content = `<div style="margin-bottom:2px; color:#888">${parseInt(dayNum)}</div><div style="font-size:14px;">${content}</div>`;
-                    grid.innerHTML += `<div class="day-card ${statusClass}" onclick="alert('Tarih: ${dateStr}')">${content}</div>`;
+                    
+                    let dayLabel = (currentView === 'month') ? i+1 : parseInt(dd);
+                    let htmlContent = (currentView === 'month') ? `<span style="font-weight:bold">${dayLabel}</span><br>${content}` : `<div style="margin-bottom:2px; color:#888">${dayLabel}</div><div>${content}</div>`;
+                    
+                    grid.innerHTML += `<div class="day-card ${statusClass}" onclick="alert('Tarih: ${dateStr}')">${htmlContent}</div>`;
 
+                    // Listeye Ekle
                     if(hasData) {
                         let stravaHtml = item.stravaLink ? `<a href="${item.stravaLink}" target="_blank" class="strava-btn">Strava</a>` : "";
                         let statusBadge = "";
@@ -554,12 +565,14 @@
                         else if(item.durum === 'rest') statusBadge = `<span class="status-badge bg-gray">Off Day</span>`;
                         else if(item.durum === 'active-rest') statusBadge = `<span class="status-badge bg-purple">Aktif</span>`;
                         else statusBadge = `<span class="status-badge bg-red">Bekliyor</span>`;
+                        
                         let yorumBtn = (role === 'admin') ? `<button class="comment-btn" onclick="yorumEkle('${email}', '${dateStr}')">✏️ Yorum</button>` : "";
                         let yorumGoster = item.kocYorumu ? `<span class="coach-note">💬 ${item.kocYorumu}</span>` : "";
                         let ekstraGoster = item.ekstra ? `<span class="extra-activity">${item.ekstra}</span>` : "";
+                        
                         list.innerHTML += `<tr><td style="width:80px;">${dateStr}</td><td><div>${item.program.substring(0,25)}...</div>${ekstraGoster}${stravaHtml} ${yorumGoster}</td><td style="text-align:right;">${statusBadge}<br>${yorumBtn}</td></tr>`;
                     }
-                });
+                }
                 if(list.innerHTML === "") list.innerHTML = "<tr><td colspan='3' style='text-align:center; color:#666;'>Bu dönemde kayıt yok.</td></tr>";
             });
         }
@@ -570,29 +583,11 @@
         function changeDateAdmin(delta) { if(adminCalView === 'week') adminCalDate.setDate(adminCalDate.getDate() + (delta * 7)); else adminCalDate.setMonth(adminCalDate.getMonth() + delta); if(adminSelectedUserEmail) renderUniversalCalendar(adminSelectedUserEmail, 'admin'); }
         function loadBugReports() { const list = document.getElementById('bugReportList'); list.innerHTML = "Yükleniyor..."; db.collection("bug_reports").orderBy("time", "desc").get().then(snap => { list.innerHTML = ""; if(snap.empty) { list.innerHTML = "<p style='color:#666; font-size:12px;'>Henüz bildirim yok.</p>"; return; } snap.forEach(doc => { let data = doc.data(); let dateDisplay = "Tarih Yok"; if(data.time && data.time.toDate) { dateDisplay = data.time.toDate().toLocaleString(); } list.innerHTML += `<div class="bug-item"><div class="bug-meta">👤 ${data.user} | 🕒 ${dateDisplay}</div><div>${data.note}</div></div>`; }); }); }
         function profiliGuncelle() { const user = auth.currentUser; if(user) db.collection("users").doc(user.email).update({ boy: document.getElementById('pBoy').value, kilo: document.getElementById('pKilo').value, yas: document.getElementById('pYas').value, hedef: document.getElementById('pHedef').value }).then(() => alert("Kaydedildi.")); }
-        
-        function goreviTamamla() { 
-            const user = auth.currentUser; if(user) { 
-                db.collection("users").doc(user.email).collection("history").doc(bugun).update({ durum: 'tamamlandi', tamamlanmaZamani: new Date() }).then(() => { 
-                    alert("Kaydedildi! ✅"); renderUniversalCalendar(user.email, 'student'); 
-                    sendMail(COACH_EMAIL, "Antrenman Tamamlandı: " + user.email, user.email + " bugünkü antrenmanını tamamladı.");
-                }).catch(() => alert("Bugün program yok.")); 
-            } 
-        }
-        
+        function goreviTamamla() { const user = auth.currentUser; const stravaLink = document.getElementById('stravaLinkInput').value; if(user) { db.collection("users").doc(user.email).collection("history").doc(bugun).update({ durum: 'tamamlandi', tamamlanmaZamani: new Date(), stravaLink: stravaLink }).then(() => { alert("Kaydedildi! ✅"); renderUniversalCalendar(user.email, 'student'); sendMail(COACH_EMAIL, "Tamamlandı", user.email + " antrenmanı bitirdi."); }).catch(() => alert("Bugün program yok.")); } }
         function yorumEkle(email, tarih) { const yorum = prompt("Yorumun:"); if(yorum) { db.collection("users").doc(email).collection("history").doc(tarih).update({ kocYorumu: yorum }).then(() => { renderUniversalCalendar(email, 'admin'); }); } }
         function adminListesiniYukle() { const select = document.getElementById('studentSelect'); select.innerHTML = "<option>Yükleniyor...</option>"; db.collection("users").where("rol", "==", "ogrenci").get().then(snap => { select.innerHTML = ""; snap.forEach(doc => { let opt = document.createElement('option'); opt.value = doc.id; opt.text = doc.data().isim; select.appendChild(opt); }); secilenOgrenciyiGetir(); }); }
         function secilenOgrenciyiGetir() { const id = document.getElementById('studentSelect').value; if(!id) return; adminSelectedUserEmail = id; adminCalDate = new Date(); db.collection("users").doc(id).get().then(doc => { document.getElementById('studentStats').style.display = 'block'; document.getElementById('studentStats').innerHTML = `Boy: ${doc.data().boy} | Kilo: ${doc.data().kilo}`; db.collection("users").doc(id).collection("history").doc(bugun).get().then(hDoc => { if(hDoc.exists) document.getElementById('workoutInput').value = hDoc.data().program; else document.getElementById('workoutInput').value = ""; }); renderUniversalCalendar(id, 'admin'); }); }
-        
-        function kaydet() { 
-            const id = document.getElementById('studentSelect').value; const prog = document.getElementById('workoutInput').value; 
-            if(!id) return; 
-            db.collection("users").doc(id).collection("history").doc(bugun).set({ program: prog, durum: 'bekliyor', tarih: bugun }).then(() => { 
-                alert("Yayınlandı!"); secilenOgrenciyiGetir(); 
-                sendMail(id, "Yeni Antrenman Programın", "Koçun sana yeni bir program yazdı! Hemen kontrol et.");
-            }); 
-        }
-        
+        function kaydet() { const id = document.getElementById('studentSelect').value; const prog = document.getElementById('workoutInput').value; if(!id) return; db.collection("users").doc(id).collection("history").doc(bugun).set({ program: prog, durum: 'bekliyor', tarih: bugun }).then(() => { alert("Yayınlandı!"); secilenOgrenciyiGetir(); sendMail(id, "Yeni Program", "Koçun yeni program yazdı."); }); }
         function ogrenciyiSil(){ if(confirm("Sil?")) { db.collection("users").doc(document.getElementById('studentSelect').value).delete().then(()=>adminListesiniYukle()); } }
         function sablonuUygula() { const val = document.getElementById('templateSelect').value; const s = { "baslangic": "🔰 BAŞLANGIÇ\n- 10dk Yürüyüş\n- 3x12 Squat", "kardiyo": "🔥 KARDİYO\n- 20dk Koşu", "bacak": "🦵 BACAK\n- 4x12 Squat", "longrun": "🏃 UZUN KOŞU\n- 60dk Koşu", "interval": "⚡ İNTERVAL\n- 8x 2dk Hızlı" }; if(s[val]) document.getElementById('workoutInput').value = s[val]; }
         function cikisYap() { localStorage.removeItem('adminLogged'); auth.signOut().then(() => location.reload()); }
