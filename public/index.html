@@ -5,49 +5,35 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Checkpoint Collective</title>
     <link rel="icon" href="CP_Logo.png" type="image/jpeg">
+    <link rel="stylesheet" href="style.css"> 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
-    <link rel="stylesheet" href="style.css">
     
     <style>
-        .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: #161b2e; border-top: 1px solid #333; display: flex; justify-content: space-around; padding: 12px 0; z-index: 1000; backdrop-filter: blur(10px); }
-        .nav-item { color: #888; text-align: center; cursor: pointer; flex: 1; font-size: 11px; font-family: 'Poppins', sans-serif; transition: 0.3s; }
-        .nav-item.active { color: #FF6B35; font-weight: bold; transform: translateY(-2px); }
-        .nav-icon { font-size: 22px; display: block; margin-bottom: 4px; }
-        .tab-content { display: none; animation: fadeIn 0.3s; padding-bottom: 20px; }
-        .tab-content.active-tab { display: block; }
-
-        .calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 6px; margin-bottom: 20px; }
-        .day-header { text-align: center; font-size: 10px; color: #666; padding-bottom: 5px; }
-        .day-card { background: #1F1F1F; border-radius: 6px; padding: 5px; text-align: center; min-height: 45px; display: flex; flex-direction: column; align-items: center; justify-content: center; border: 1px solid #333; font-size: 12px; cursor: pointer; transition: 0.2s; }
-        .day-today { border-color: #FF6B35 !important; box-shadow: 0 0 8px rgba(255, 107, 53, 0.3); }
-        .day-done { background: rgba(76, 175, 80, 0.2); border-color: #4caf50; color: #a5d6a7; }
-        .day-missed { background: rgba(244, 67, 54, 0.15); border-color: #d32f2f; color: #ef9a9a; }
-        .day-rest { background: rgba(158, 158, 158, 0.15); border-color: #9e9e9e; color: #ccc; }
-        .day-active-rest { background: rgba(221, 160, 221, 0.15); border-color: #DDA0DD; color: #DDA0DD; }
-        .day-other-month { opacity: 0.3; }
-
-        .history-table { width: 100%; border-collapse: collapse; font-size: 13px; }
-        .history-table td { padding: 12px 8px; border-bottom: 1px solid #333; color: #ccc; vertical-align: top; }
-        .status-badge { padding: 3px 8px; border-radius: 4px; font-size: 10px; font-weight: bold; display: inline-block; margin-bottom: 5px; text-transform: uppercase; }
-        .bg-green { background: #2e7d32; color: white; } .bg-red { background: #c62828; color: white; } .bg-gray { background: #616161; color: white; } .bg-purple { background: #7B1FA2; color: white; }
+        /* Gerekli olan temel stiller (style.css yüklenmezse diye yedek) */
+        .hidden { display: none !important; }
+        .container { display: none; } /* JS yüklenene kadar gizli kalsın */
+        .container.active-screen { display: block; animation: fadeIn 0.4s; }
         
-        .coach-note { font-size: 11px; color: #FFBC42; font-style: italic; display: block; margin-top: 4px; border-left: 2px solid #FFBC42; padding-left: 6px;}
-        .extra-activity { font-size: 11px; color: #DDA0DD; font-weight: bold; display: block; margin-top: 4px; }
-
-        .calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; background: #1F1F1F; padding: 10px; border-radius: 8px; border: 1px solid #333; }
-        .view-toggle { display: flex; background: #1F1F1F; border-radius: 8px; overflow: hidden; margin-bottom: 15px; border: 1px solid #333; }
-        .toggle-btn { flex: 1; border: none; background: none; color: #888; padding: 10px; cursor: pointer; font-size: 12px; }
-        .toggle-btn.active { background: #FF6B35; color: white; font-weight: bold; }
-        .cal-btn { background: none; border: none; color: #FF6B35; font-size: 20px; cursor: pointer; }
+        /* Link görünümü */
+        a { cursor: pointer; color: #FF6B35; text-decoration: underline; font-weight: bold; }
         
-        .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 2000; display: none; justify-content: center; align-items: center; animation: fadeIn 0.2s; }
-        .modal-box { background: #161b2e; width: 90%; max-width: 400px; padding: 25px; border-radius: 15px; border: 1px solid #FF6B35; text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5); }
-        .bug-item { background: #1F1F1F; padding: 10px; margin-bottom: 8px; border-radius: 6px; border-left: 3px solid #d32f2f; font-size: 12px; }
+        /* Yükleniyor ekranı */
+        #loadingScreen { 
+            position: fixed; top:0; left:0; width:100%; height:100%; 
+            background:#0B132B; color:white; display:flex; 
+            justify-content:center; align-items:center; z-index:9999; 
+        }
+        
+        @keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
     </style>
 </head>
 <body>
 
-    <div id="bugModal" class="modal-overlay">
+    <div id="loadingScreen">
+        <h2>Yükleniyor...</h2>
+    </div>
+
+    <div id="bugModal" class="modal-overlay" style="display:none;">
         <div class="modal-box">
             <h3 style="color:#FF6B35; margin-bottom:10px;">⚠️ Sorun Bildir</h3>
             <textarea id="bugText" rows="4" style="width:100%; padding:10px; background:#252525; color:white; border:1px solid #444; border-radius:5px;" placeholder="Sorunu buraya yaz..."></textarea>
@@ -58,8 +44,8 @@
         </div>
     </div>
 
-    <div id="loginContainer" class="container">
-        <img src="CP_Logo.png" alt="Checkpoint Logo" class="logo">
+    <div id="loginContainer" class="container active-screen">
+        <img src="CP_Logo.png" alt="Checkpoint Logo" class="logo" style="width:150px; border-radius:10px; margin-bottom:20px;">
         <h1>Giriş Yap</h1>
         <form id="loginForm">
             <div class="input-group"><label>E-Posta</label><input type="email" id="email" required></div>
@@ -70,24 +56,25 @@
             </div>
             <button type="submit" class="btn-primary">GİRİŞ YAP</button>
         </form>
-        <p class="footer-text"><a onclick="ekranDegistir('kayit')">Kayıt Ol</a></p>
+        <p class="footer-text">Hesabın yok mu? <a onclick="ekranDegistir('kayit')">Kayıt Ol</a></p>
+        
         <button class="bug-btn" onclick="openBugModal()">⚠️ Bir sorun mu var? Bildir.</button>
-    
+        
     </div>
 
-    <div id="registerContainer" class="container hidden">
+    <div id="registerContainer" class="container">
         <h1>Kayıt Ol</h1>
-        <p class="subtitle" style="color:#FF6B35;">📧 Doğrulama maili gönderilecektir.</p>
+        <p style="color:#FF6B35; font-size:12px; margin-bottom:20px;">📧 Kayıt sonrası doğrulama maili gönderilecektir.</p>
         <form id="registerForm">
             <div class="input-group"><label>Ad Soyad</label><input type="text" id="regName" required></div>
             <div class="input-group"><label>E-Posta</label><input type="email" id="regEmail" required></div>
-            <div class="input-group"><label>Şifre (En az 6 karakter)</label><input type="password" id="regPass" required></div>
+            <div class="input-group"><label>Şifre</label><input type="password" id="regPass" required></div>
             <button type="submit" class="btn-primary">KAYIT OL</button>
         </form>
-        <p class="footer-text"><a onclick="ekranDegistir('giris')">Giriş Yap</a></p>
+        <p class="footer-text">Zaten hesabın var mı? <a onclick="ekranDegistir('giris')">Giriş Yap</a></p>
     </div>
 
-    <div id="adminPanel" class="container hidden">
+    <div id="adminPanel" class="container">
         <h2 class="welcome-title">Coach Paneli</h2>
         <div class="input-group">
             <label>Öğrenci Seç:</label>
@@ -140,7 +127,7 @@
         <button class="btn-primary" style="background:#333; margin-top:20px;" onclick="cikisYap()">ÇIKIŞ</button>
     </div>
 
-    <div id="studentPanel" class="container hidden" style="padding:20px 20px 0 20px;">
+    <div id="studentPanel" class="container" style="padding:20px 20px 0 20px;">
         <div style="display:flex; justify-content:space-between; align-items:center; margin-bottom:20px;">
             <h2 id="studentNameTitle" class="welcome-title" style="margin:0; font-size:20px;">Merhaba!</h2>
             <button onclick="cikisYap()" style="background:#333; border:none; color:white; padding:5px 10px; border-radius:5px; font-size:12px;">Çıkış</button>
@@ -218,26 +205,58 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <script>
-        // --- AYARLAR ---
+        // --- 1. AYARLAR (DİKKAT: Tırnak işaretlerini silme!) ---
         const firebaseConfig = {
-            apiKey: "AIzaSyAMi1g8d-nUagKV1bMjSjtOyJKX19s76BY",
-            authDomain: "checkpoint-app-1abcd.firebaseapp.com",
-            projectId: "checkpoint-app-1abcd",
-            storageBucket: "checkpoint-app-1abcd.firebasestorage.app",
-            messagingSenderId: "840395107034",
-            appId: "1:840395107034:web:08492488e1a20205a293e3"
+            apiKey: "BURAYA_API_KEY_YAPISTIR",
+            authDomain: "BURAYA_AUTH_DOMAIN_YAPISTIR",
+            projectId: "BURAYA_PROJECT_ID_YAPISTIR",
+            storageBucket: "BURAYA_STORAGE_BUCKET_YAPISTIR",
+            messagingSenderId: "BURAYA_SENDER_ID_YAPISTIR",
+            appId: "BURAYA_APP_ID_YAPISTIR"
         };
-        const EMAILJS_PUBLIC_KEY = "USER_ID_BURAYA";
-        const EMAILJS_SERVICE_ID = "SERVICE_ID_BURAYA";
-        const EMAILJS_TEMPLATE_ID = "TEMPLATE_ID_BURAYA";
+        
+        const EMAILJS_PUBLIC_KEY = "BURAYA_EMAILJS_PUBLIC_KEY_YAPISTIR"; 
+        const EMAILJS_SERVICE_ID = "BURAYA_EMAILJS_SERVICE_ID_YAPISTIR";
+        const EMAILJS_TEMPLATE_ID = "BURAYA_EMAILJS_TEMPLATE_ID_YAPISTIR";
         const COACH_EMAIL = "senin_gercek_mailin@gmail.com";
 
+        // --- BAŞLATMA ---
         firebase.initializeApp(firebaseConfig);
         const db = firebase.firestore();
         const auth = firebase.auth();
-        try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.log("EmailJS init error"); }
+        try { emailjs.init(EMAILJS_PUBLIC_KEY); } catch(e) { console.log("EmailJS başlatılamadı."); }
 
-        // State Değişkenleri
+        // Sayfa Yüklenince Loading'i kaldır
+        document.getElementById('loadingScreen').style.display = 'none';
+
+        // --- EKRAN YÖNETİMİ ---
+        const screens = {
+            giris: document.getElementById('loginContainer'),
+            kayit: document.getElementById('registerContainer'),
+            admin: document.getElementById('adminPanel'),
+            ogrenci: document.getElementById('studentPanel')
+        };
+
+        function ekranDegistir(hedef) {
+            // Tüm ekranları gizle (container sınıfı olanları değil, id ile seçtiklerimizi)
+            Object.values(screens).forEach(el => {
+                el.classList.remove('active-screen');
+                el.classList.add('hidden'); // Hidden sınıfını ekle
+                el.style.display = 'none'; // Garanti olsun
+            });
+
+            // Hedef ekranı aç
+            const target = screens[hedef];
+            if(target) {
+                target.classList.remove('hidden');
+                target.classList.add('active-screen');
+                target.style.display = 'block';
+            } else {
+                console.error("Hata: Hedef ekran bulunamadı -> " + hedef);
+            }
+        }
+
+        // --- AÇILIŞ KONTROLLERİ ---
         let studentCalDate = new Date(); let studentCalView = 'week';
         let adminCalDate = new Date(); let adminCalView = 'week';
         let adminSelectedUserEmail = null;
@@ -253,17 +272,15 @@
         if(document.getElementById('bugunTarihAdmin')) document.getElementById('bugunTarihAdmin').innerText = bugun;
         if(document.getElementById('bugunTarihOgrenci')) document.getElementById('bugunTarihOgrenci').innerText = bugun;
 
-        // --- AÇILIŞ KONTROLÜ ---
         window.onload = function() {
-            // Admin Kontrolü
+            document.getElementById('loadingScreen').style.display = 'none'; // Loading gizle
+
             if(localStorage.getItem('adminLogged') === 'true') {
                 ekranDegistir('admin'); adminListesiniYukle(); loadBugReports();
             }
             
-            // Öğrenci & Strava Kontrolü
             auth.onAuthStateChanged(function(user) {
                 if (user && localStorage.getItem('adminLogged') !== 'true') {
-                    // Strava Token Var mı?
                     const urlParams = new URLSearchParams(window.location.search);
                     const stravaToken = urlParams.get('strava_token');
                     
@@ -272,18 +289,17 @@
                             stravaConnected: true, stravaAccessToken: stravaToken
                         }).then(() => {
                             window.history.replaceState({}, document.title, "/");
-                            alert("✅ Strava Başarıyla Bağlandı!");
+                            alert("✅ Strava Bağlandı!");
                             location.href = "/";
                         });
                     } else {
-                        // Token yoksa normal verileri yükle
                         loadStudentData(user.email);
                     }
                 }
             });
         };
 
-        // --- KAYIT OL (DOĞRULAMA EKLENDİ) ---
+        // --- KAYIT OLMA ---
         document.getElementById('registerForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('regEmail').value.trim();
@@ -291,9 +307,9 @@
             const name = document.getElementById('regName').value;
 
             auth.createUserWithEmailAndPassword(email, password).then((cred) => {
-                // 1. Mail Gönder
+                // Mail Gönder
                 cred.user.sendEmailVerification().then(() => {
-                    // 2. Veritabanına Kaydet
+                    // Veritabanına Yaz
                     db.collection("users").doc(email).set({
                         isim: name, email: email, rol: 'ogrenci', boy: '', kilo: '', yas: '', hedef: '', stravaConnected: false
                     }).then(() => {
@@ -305,28 +321,25 @@
             }).catch(err => alert("Kayıt Hatası: " + err.message));
         });
 
-        // --- GİRİŞ YAP (DOĞRULAMA KONTROLÜ EKLENDİ) ---
+        // --- GİRİŞ YAPMA ---
         document.getElementById('loginForm').addEventListener('submit', (e) => {
             e.preventDefault();
             const email = document.getElementById('email').value.trim().toLowerCase();
             const password = document.getElementById('password').value.trim();
             const rememberMe = document.getElementById('rememberMe').checked;
 
-            // Admin Girişi
             if(email === 'admin@cp.com') {
-                if(password === 'CP2025..2025') {
+                if(password === 'cp2025') {
                     if(rememberMe) localStorage.setItem('adminLogged', 'true');
                     ekranDegistir('admin'); adminListesiniYukle(); loadBugReports();
                 } else alert("❌ Hata: Admin şifresi yanlış!");
                 return;
             }
 
-            // Öğrenci Girişi
             const persistence = rememberMe ? firebase.auth.Auth.Persistence.LOCAL : firebase.auth.Auth.Persistence.SESSION;
             auth.setPersistence(persistence).then(() => {
                 return auth.signInWithEmailAndPassword(email, password);
             }).then((cred) => {
-                // MAİL ONAYLI MI?
                 if (cred.user.emailVerified) {
                     loadStudentData(email);
                 } else {
@@ -336,7 +349,15 @@
             }).catch(err => alert("Giriş Hatası: " + err.message));
         });
 
-        // --- DİĞER FONKSİYONLAR ---
+        // --- DİĞER İŞLEVLER (AYNI) ---
+        function switchTab(tabId, btnElement) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab'));
+            document.getElementById(tabId).classList.add('active-tab');
+            document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active'));
+            btnElement.classList.add('active');
+            if(tabId === 'tab-history' && auth.currentUser) renderUniversalCalendar(auth.currentUser.email, 'student');
+        }
+
         function loadStudentData(email) {
             db.collection("users").doc(email).get().then(doc => {
                 if(doc.exists) {
@@ -369,14 +390,10 @@
                     historyRef.where("durum", "==", "tamamlandi").get().then(snap => {
                         document.getElementById('streakCount').innerText = snap.size;
                     });
-                } else { alert("Kullanıcı yok."); auth.signOut(); }
+                } else { auth.signOut(); }
             });
         }
 
-        // (Kalan fonksiyonlar: Takvim, Harici Ekle, Admin Paneli, vb. aynı şekilde devam ediyor. Kodun uzunluğu nedeniyle özetliyorum ama yukarıdaki mantıkla birleşti.)
-        
-        function ekranDegistir(hedef) { Object.values(screens).forEach(el => el.classList.add('hidden')); screens[hedef].classList.remove('hidden'); }
-        function switchTab(tabId, btnElement) { document.querySelectorAll('.tab-content').forEach(el => el.classList.remove('active-tab')); document.getElementById(tabId).classList.add('active-tab'); document.querySelectorAll('.nav-item').forEach(el => el.classList.remove('active')); btnElement.classList.add('active'); if(tabId === 'tab-history' && auth.currentUser) renderUniversalCalendar(auth.currentUser.email, 'student'); }
         function sendMail(to, sub, msg) { if(EMAILJS_PUBLIC_KEY !== "USER_ID_BURAYA") emailjs.send(EMAILJS_SERVICE_ID, EMAILJS_TEMPLATE_ID, {to_email: to, subject: sub, message: msg}); }
         function openBugModal() { document.getElementById('bugModal').style.display = 'flex'; }
         function closeBugModal() { document.getElementById('bugModal').style.display = 'none'; }
@@ -394,7 +411,7 @@
         function cikisYap(){ localStorage.removeItem('adminLogged'); auth.signOut().then(()=>location.reload()); }
         function loadBugReports(){ const l=document.getElementById('bugReportList'); l.innerHTML="Yükleniyor..."; db.collection("bug_reports").orderBy("time","desc").get().then(s=>{ l.innerHTML=""; if(s.empty){l.innerHTML="<p style='color:#666'>Yok.</p>";return;} s.forEach(d=>{ l.innerHTML+=`<div class="bug-item"><div class="bug-meta">${d.data().user}</div><div>${d.data().note}</div></div>`; }); }); }
         
-        // --- RENDER CALENDAR (ÖZET) ---
+        // --- RENDER CALENDAR ---
         function renderUniversalCalendar(email, role) {
             let currentDate = (role === 'student') ? studentCalDate : adminCalDate;
             let currentView = (role === 'student') ? studentCalView : adminCalView;
@@ -418,7 +435,6 @@
             db.collection("users").doc(email).collection("history").get().then(snapshot => {
                 let historyMap = {}; snapshot.forEach(doc => { historyMap[doc.id] = doc.data(); });
                 grid.innerHTML = "";
-                
                 if(currentView==='month'){ let firstDay=startDate.getDay(); if(firstDay===0)firstDay=7; for(let i=1; i<firstDay; i++) grid.innerHTML+=`<div class="day-card day-other-month"></div>`; }
 
                 for(let i=0; i<loopCount; i++) {
@@ -426,7 +442,6 @@
                     if(currentView==='week') d.setDate(startDate.getDate() + i); else d.setDate(i+1);
                     let y = d.getFullYear(); let m = String(d.getMonth()+1).padStart(2,'0'); let dd = String(d.getDate()).padStart(2,'0');
                     let dateStr = `${y}-${m}-${dd}`;
-                    
                     let statusClass = ""; let content = "";
                     if(dateStr === bugun) statusClass += " day-today";
                     let hasData = false; let item = null;
@@ -450,7 +465,6 @@
                 if(list.innerHTML==="") list.innerHTML="<tr><td>Kayıt yok.</td></tr>";
             });
         }
-        // --- KONTROL BUTONLARI ---
         function changeViewStudent(v){studentCalView=v; renderUniversalCalendar(auth.currentUser.email,'student');}
         function changeDateStudent(d){ if(studentCalView==='week') studentCalDate.setDate(studentCalDate.getDate()+d*7); else studentCalDate.setMonth(studentCalDate.getMonth()+d); renderUniversalCalendar(auth.currentUser.email,'student'); }
         function changeViewAdmin(v){adminCalView=v; if(adminSelectedUserEmail) renderUniversalCalendar(adminSelectedUserEmail,'admin');}
