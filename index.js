@@ -7,20 +7,20 @@ const app = express();
 app.use(cors());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- DİKKAT: BURAYA KENDİ STRAVA BİLGİLERİNİ YAZ ---
-const CLIENT_ID = '186518';       
-const CLIENT_SECRET = '2e89267133a6e48c3fc71787a8eaba4bbb71c863'; 
-// Sunucu hangi portu verirse onu kullan, yoksa 3000'i kullan
+// --- DİKKAT: BURALARI KENDİ BİLGİLERİNLE DOLDUR ---
+const CLIENT_ID = '186518';       // Senin Client ID'n (Linkten gördüğüm kadarıyla bu)
+const CLIENT_SECRET = '2e89267133a6e48c3fc71787a8eaba4bbb71c863'; // Strava sayfasındaki Client Secret'ı buraya yapıştır
 const PORT = process.env.PORT || 3000;
 
-// 1. Giriş Rotası
+// 1. Giriş Rotası (HATALI KISIM DÜZELTİLDİ)
 app.get('/auth/strava', (req, res) => {
-    // Onay ekranına gönder
-   const redirectUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&https://checkpoint-collective.onrender.com//exchange_token&approval_prompt=force&scope=activity:read_all`;
+    // Düzeltme: 'redirect_uri=' ibaresi eklendi ve çift slash silindi.
+    const redirectUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&redirect_uri=https://checkpoint-collective.onrender.com/exchange_token&approval_prompt=force&scope=activity:read_all`;
+    
     res.redirect(redirectUrl);
 });
 
-// 2. Karşılama ve Yönlendirme Rotası (GÜNCELLENDİ)
+// 2. Karşılama Rotası
 app.get('/exchange_token', async (req, res) => {
     const authorizationCode = req.query.code;
 
@@ -29,7 +29,6 @@ app.get('/exchange_token', async (req, res) => {
     }
 
     try {
-        // Strava'dan anahtarı al
         const response = await axios.post('https://www.strava.com/oauth/token', {
             client_id: CLIENT_ID,
             client_secret: CLIENT_SECRET,
@@ -41,9 +40,7 @@ app.get('/exchange_token', async (req, res) => {
         const refreshToken = response.data.refresh_token;
         const expiresAt = response.data.expires_at;
 
-        // --- İŞTE BURAYI DÜZELTTİK ---
-        // "Başarılı" yazısı yerine, kullanıcıyı ana sayfaya (/) geri gönderiyoruz.
-        // Ama eli boş göndermiyoruz, URL'in arkasına anahtarı (token) ekliyoruz.
+        // Kullanıcıyı token ile ana sayfaya geri gönder
         res.redirect(`/?strava_token=${accessToken}&strava_refresh=${refreshToken}&strava_expires=${expiresAt}`);
 
     } catch (error) {
@@ -58,5 +55,5 @@ app.get('/', (req, res) => {
 });
 
 app.listen(PORT, () => {
-    console.log(`🚀 Sunucu hazır! http://localhost:${PORT}`);
+    console.log(`🚀 Sunucu hazır!`);
 });
