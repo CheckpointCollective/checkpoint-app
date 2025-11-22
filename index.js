@@ -16,7 +16,7 @@ const PORT = process.env.PORT || 3000;
 // 1. Giriş Rotası
 app.get('/auth/strava', (req, res) => {
     // Onay ekranına gönder
-   const redirectUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&https://checkpoint-collective.onrender.com/exchange_token&approval_prompt=force&scope=activity:read_all`;
+   const redirectUrl = `https://www.strava.com/oauth/authorize?client_id=${CLIENT_ID}&response_type=code&https://checkpoint-collective.onrender.com//exchange_token&approval_prompt=force&scope=activity:read_all`;
     res.redirect(redirectUrl);
 });
 
