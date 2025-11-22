@@ -1,0 +1,326 @@
+/* --- 1. GENEL AYARLAR VE SIFIRLAMA --- */
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+    /* Mobilde dokunma gecikmesini kaldırır, butonları hızlandırır */
+    touch-action: manipulation; 
+}
+
+body {
+    background-color: #FFFFFF; /* Marka Rengi: Gece Laciverti */
+    font-family: 'Inter', sans-serif; /* Okuma Fontu */
+    color: #0B132B;
+    display: flex;
+    justify-content: center;
+    align-items: flex-start; /* İçerik uzadığında kaydırma olsun */
+    min-height: 100vh;
+    padding: 20px;
+    padding-bottom: 90px; /* Alt menü için güvenli boşluk */
+}
+
+/* Gizleme Sınıfı (Sayfa geçişleri için kritik) */
+.hidden { display: none !important; }
+
+/* Ana Taşıyıcı Kutu */
+.container {
+    width: 100%;
+    max-width: 450px; /* Mobilde tam ekran, PC'de dar */
+    margin: 0 auto;
+    text-align: center;
+    animation: fadeIn 0.4s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* --- 2. LOGO VE TİPOGRAFİ --- */
+.logo {
+    width: 160px;
+    border-radius: 12px;
+  
+    margin-bottom: 20px;
+}
+
+h1, h2, h3 {
+    font-family: 'Poppins', sans-serif; /* Başlık Fontu */
+    color: #FF6B35;
+    margin-bottom: 10px;
+    letter-spacing: 0.5px;
+}
+
+.subtitle {
+    color: #0B132B;
+    font-size: 14px;
+    margin-bottom: 30px;
+    opacity: 0.8;
+}
+
+.welcome-title {
+    color: #FF6B35; /* Neon Turuncu */
+    margin-bottom: 15px;
+}
+
+/* --- 3. FORMLAR VE GİRİŞ ALANLARI --- */
+.input-group {
+    margin-bottom: 15px;
+    text-align: left;
+}
+
+label {
+    display: block;
+    margin-bottom: 5px;
+    font-size: 12px;
+    color: #0B132B;
+    font-weight: 600;
+    text-transform: uppercase;
+}
+
+input, select, textarea {
+    width: 100%;
+    padding: 14px;
+    border-radius: 10px;
+    border: 1px solid #333;
+    background-color: #1F1F1F; /* Koyu Gri Zemin */
+    color: #FFFFFF;
+    font-family: 'Inter', sans-serif;
+    font-size: 16px; /* iPhone'da zoom yapmayı engeller */
+    outline: none;
+    transition: 0.3s;
+}
+
+input:focus, select:focus, textarea:focus {
+    border-color: #FF6B35;
+    box-shadow: 0 0 8px rgba(255, 107, 53, 0.2);
+}
+
+/* Beni Hatırla Checkbox Stili */
+.remember-me-container {
+    display: flex;
+    align-items: center;
+    margin-bottom: 20px;
+    cursor: pointer;
+    text-align: left;
+}
+.remember-me-container input {
+    width: auto; /* Checkbox küçük kalsın */
+    margin-right: 10px;
+    accent-color: #FF6B35; /* Checkbox rengi */
+    transform: scale(1.2);
+}
+.remember-me-container label {
+    margin-bottom: 0;
+    cursor: pointer;
+    text-transform: none;
+    font-size: 14px;
+    color: #0B132B;
+}
+
+/* --- 4. BUTONLAR --- */
+.btn-primary {
+    width: 100%;
+    padding: 16px;
+    background-color: #FF6B35; /* Ana Turuncu */
+    color: #FFFFFF;
+    border: none;
+    border-radius: 10px;
+    font-family: 'Poppins', sans-serif;
+    font-weight: bold;
+    font-size: 16px;
+    cursor: pointer;
+    margin-top: 5px;
+    transition: transform 0.2s;
+}
+
+.btn-primary:active { transform: scale(0.97); }
+
+.btn-danger {
+    background-color: #d32f2f; /* Silme Kırmızısı */
+    width: auto;
+    padding: 10px 15px;
+    margin-left: 5px;
+}
+
+/* Linkler ve Alt Metinler */
+a { color: #FF6B35; text-decoration: none; font-weight: bold; cursor: pointer; }
+.footer-text { margin-top: 20px; font-size: 13px; color: #888; }
+
+/* Hata Bildir Linki */
+.bug-btn {
+    background: none; border: none; color: #666;
+    font-size: 11px; cursor: pointer; text-decoration: underline;
+    margin-top: 15px; transition: 0.3s;
+}
+.bug-btn:hover { color: #FF6B35; }
+
+/* --- 5. ALT MENÜ (TAB NAVIGATION) --- */
+.bottom-nav {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    width: 100%;
+    background-color: #161b2e; /* Çok koyu lacivert */
+    border-top: 1px solid #333;
+    display: flex;
+    justify-content: space-around;
+    padding: 12px 0;
+    z-index: 1000;
+    backdrop-filter: blur(10px);
+}
+
+.nav-item {
+    color: #888;
+    text-align: center;
+    cursor: pointer;
+    flex: 1;
+    font-size: 11px;
+    font-family: 'Poppins', sans-serif;
+    transition: 0.3s;
+}
+
+.nav-item.active {
+    color: #FF6B35;
+    font-weight: bold;
+    transform: translateY(-2px);
+}
+
+.nav-icon {
+    font-size: 22px;
+    display: block;
+    margin-bottom: 4px;
+}
+
+.tab-content {
+    display: none;
+    animation: fadeIn 0.3s;
+    padding-bottom: 20px;
+}
+.tab-content.active-tab { display: block; }
+
+/* --- 6. TAKVİM (GRID SYSTEM) --- */
+.calendar-controls {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 10px; background: #1F1F1F; padding: 10px; border-radius: 8px;
+    border: 1px solid #333;
+}
+
+.cal-btn { background: none; border: none; color: #FF6B35; font-size: 20px; cursor: pointer; }
+.cal-title { font-weight: bold; font-size: 14px; }
+
+.view-toggle {
+    display: flex; background: #1F1F1F; border-radius: 8px; overflow: hidden; 
+    margin-bottom: 15px; border: 1px solid #333;
+}
+.toggle-btn {
+    flex: 1; border: none; background: none; color: #888; padding: 10px; cursor: pointer; font-size: 12px;
+}
+.toggle-btn.active { background: #FF6B35; color: white; font-weight: bold; }
+
+.calendar-grid {
+    display: grid;
+    grid-template-columns: repeat(7, 1fr);
+    gap: 6px;
+    margin-bottom: 20px;
+}
+
+.day-header {
+    text-align: center; font-size: 10px; color: #666; padding-bottom: 5px;
+}
+
+.day-card {
+    background: #1F1F1F;
+    border-radius: 6px;
+    padding: 5px;
+    text-align: center;
+    min-height: 45px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid #333;
+    font-size: 12px;
+    cursor: pointer;
+    transition: 0.2s;
+}
+
+/* Takvim Durum Renkleri */
+.day-other-month { opacity: 0.3; }
+.day-today { border-color: #FF6B35 !important; box-shadow: 0 0 8px rgba(255, 107, 53, 0.3); }
+.day-done { background: rgba(76, 175, 80, 0.2); border-color: #4caf50; color: #a5d6a7; } /* Yeşil */
+.day-missed { background: rgba(244, 67, 54, 0.15); border-color: #d32f2f; color: #ef9a9a; } /* Kırmızı */
+.day-rest { background: rgba(158, 158, 158, 0.15); border-color: #9e9e9e; color: #aaa; } /* Gri */
+.day-active-rest { background: rgba(221, 160, 221, 0.15); border-color: #DDA0DD; color: #DDA0DD; } /* Mor */
+
+/* --- 7. GEÇMİŞ TABLOSU VE LİSTELER --- */
+.history-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 13px;
+}
+
+.history-table td {
+    padding: 12px 8px;
+    border-bottom: 1px solid #333;
+    color: #ccc;
+    vertical-align: top;
+}
+
+/* Durum Rozetleri (Badge) */
+.status-badge {
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 10px;
+    font-weight: bold;
+    display: inline-block;
+    margin-bottom: 5px;
+    text-transform: uppercase;
+}
+.bg-green { background: #2e7d32; color: white; }
+.bg-red { background: #c62828; color: white; }
+.bg-gray { background: #616161; color: white; } /* Off */
+.bg-purple { background: #7B1FA2; color: white; } /* Active Rest */
+
+/* Detay Metinleri */
+.coach-note { 
+    font-size: 11px; color: #FFBC42; font-style: italic; 
+    display: block; margin-top: 4px; border-left: 2px solid #FFBC42; padding-left: 6px;
+}
+.extra-activity { 
+    font-size: 11px; color: #DDA0DD; font-weight: bold; 
+    display: block; margin-top: 4px; 
+}
+
+/* Özel Küçük Butonlar */
+.strava-btn {
+    color: #FC4C02; font-weight: bold; text-decoration: none; font-size: 11px;
+    border: 1px solid #FC4C02; padding: 2px 6px; border-radius: 4px;
+    display: inline-block; margin-top: 2px;
+}
+.comment-btn {
+    background: none; border: 1px solid #555; color: #aaa;
+    cursor: pointer; border-radius: 4px; padding: 3px 8px; font-size: 10px; margin-top: 5px;
+}
+
+/* --- 8. HATA BİLDİRİM PENCERESİ (MODAL) --- */
+.modal-overlay {
+    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
+    background: rgba(0,0,0,0.8); z-index: 2000;
+    display: none; justify-content: center; align-items: center;
+    animation: fadeIn 0.2s;
+}
+
+.modal-box {
+    background: #161b2e;
+    width: 90%; max-width: 400px; padding: 25px;
+    border-radius: 15px; border: 1px solid #FF6B35;
+    text-align: left; box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+}
+
+/* Admin Panelindeki Bug Listesi */
+.bug-item {
+    background: #1F1F1F; padding: 10px; margin-bottom: 8px;
+    border-radius: 6px; border-left: 3px solid #d32f2f; font-size: 12px;
+}
+.bug-meta { color: #888; font-size: 10px; margin-bottom: 4px; display: block; }
