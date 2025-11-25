@@ -8,6 +8,21 @@
     <link rel="stylesheet" href="style.css"> 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+      window.OneSignalDeferred = window.OneSignalDeferred || [];
+      OneSignalDeferred.push(async function(OneSignal) {
+        await OneSignal.init({
+          appId: "8d4c0c13-12bb-436a-95d1-bd64eaa1a051",
+          safari_web_id: "web.onesignal.auto.2c2f7f93-c22c-4405-a44b-05589b796f38",
+          notifyButton: {
+            enable: true, /* Sağ altta zil ikonu çıkar */
+          },
+        });
+      });
+    </script>
+
+
     <link rel="manifest" href="manifest.json">
     <meta name="theme-color" content="#0B132B">
     <link rel="apple-touch-icon" href="CP_Logo.png"> 
@@ -234,7 +249,7 @@
         const EMAILJS_PUBLIC_KEY = "u86YX7H03kFzxPSeZ"; 
         const EMAILJS_SERVICE_ID = "service_inrl3js";
         const EMAILJS_TEMPLATE_ID = "template_b5u758v";
-        const COACH_EMAIL = "senin_gercek_mailin@gmail.com";
+        const COACH_EMAIL = "cpnoktasi@gmail.com";
 
         // --- BAŞLATMA ---
         firebase.initializeApp(firebaseConfig);
@@ -344,7 +359,7 @@
             const password = document.getElementById('password').value.trim();
             const rememberMe = document.getElementById('rememberMe').checked;
 
-            if(email === 'admin@cp.com') {
+            if(email === 'cpnoktasi@gmail.com') {
                 if(password === 'cp2025') {
                     if(rememberMe) localStorage.setItem('adminLogged', 'true');
                     ekranDegistir('admin'); adminListesiniYukle(); loadBugReports();
@@ -364,6 +379,20 @@
                 }
             }).catch(err => alert("Giriş Hatası: " + err.message));
         });
+
+// --- YENİ: TELEFONA BİLDİRİM GÖNDERME FONKSİYONU ---
+function sendPushNotification(targetEmail, message) {
+    // Kendi sunucumuza istek atıyoruz
+    fetch('/api/send-notification', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+            targetEmail: targetEmail,
+            message: message
+        })
+    }).then(res => console.log("Bildirim İsteği Gönderildi"))
+      .catch(err => console.error("Bildirim Hatası:", err));
+}
 
         // --- DİĞER İŞLEVLER (AYNI) ---
         function switchTab(tabId, btnElement) {
@@ -414,14 +443,14 @@
         function openBugModal() { document.getElementById('bugModal').style.display = 'flex'; }
         function closeBugModal() { document.getElementById('bugModal').style.display = 'none'; }
         function sendBugReport() { const note = document.getElementById('bugText').value; if(note) { db.collection("bug_reports").add({user: auth.currentUser?.email||"Misafir", note:note, time:new Date()}).then(()=>{ alert("Gönderildi!"); closeBugModal(); }); } }
-        function hariciEkle() { const type=document.getElementById('extraType').value; const note=document.getElementById('extraNote').value; if(note){ const user=auth.currentUser; const text=`➕ ${type} (${note})`; db.collection("users").doc(user.email).collection("history").doc(bugun).get().then(doc=>{ let newData={ekstra: doc.exists && doc.data().ekstra ? doc.data().ekstra+", "+text : text, durum: doc.exists && doc.data().durum==='rest'?'active-rest':'tamamlandi'}; if(!doc.exists){newData.tarih=bugun; newData.program="Serbest Aktivite";} db.collection("users").doc(user.email).collection("history").doc(bugun).set(newData, {merge:true}).then(()=>{ alert("Eklendi!"); renderUniversalCalendar(user.email,'student'); sendMail(COACH_EMAIL, "Ekstra", user.email+" ekledi: "+text); }); }); } }
+        function hariciEkle() { const type=document.getElementById('extraType').value; const note=document.getElementById('extraNote').value; if(note){ const user=auth.currentUser; const text=`➕ ${type} (${note})`; db.collection("users").doc(user.email).collection("history").doc(bugun).get().then(doc=>{ let newData={ekstra: doc.exists && doc.data().ekstra ? doc.data().ekstra+", "+text : text, durum: doc.exists && doc.data().durum==='rest'?'active-rest':'tamamlandi'}; if(!doc.exists){newData.tarih=bugun; newData.program="Serbest Aktivite";} db.collection("users").doc(user.email).collection("history").doc(bugun).set(newData, {merge:true}).then(()=>{ alert("Eklendi!"); renderUniversalCalendar(user.email,'student'); sendMail(COACH_EMAIL, "Ekstra", user.email+" ekledi: "+text);sendPushNotification(COACH_EMAIL, "Bir öğrenci ekstra aktivite yaptı! 🧘"); }); }); } }
         function setRestDay() { const id=document.getElementById('studentSelect').value; if(id) db.collection("users").doc(id).collection("history").doc(bugun).set({program:"Rest Day", durum:"rest", tarih:bugun}).then(()=>{alert("OFF"); secilenOgrenciyiGetir();}); }
         function profiliGuncelle() { const user=auth.currentUser; if(user) db.collection("users").doc(user.email).update({boy:document.getElementById('pBoy').value, kilo:document.getElementById('pKilo').value, yas:document.getElementById('pYas').value, hedef:document.getElementById('pHedef').value}).then(()=>alert("Kaydedildi")); }
-        function goreviTamamla() { const user=auth.currentUser; const link=document.getElementById('stravaLinkInput').value; if(user) db.collection("users").doc(user.email).collection("history").doc(bugun).update({durum:'tamamlandi', tamamlanmaZamani:new Date(), stravaLink:link}).then(()=>{ alert("Kaydedildi!"); renderUniversalCalendar(user.email,'student'); sendMail(COACH_EMAIL, "Bitti", user.email+" tamamladı."); }).catch(()=>alert("Program yok")); }
+        function goreviTamamla() { const user=auth.currentUser; const link=document.getElementById('stravaLinkInput').value; if(user) db.collection("users").doc(user.email).collection("history").doc(bugun).update({durum:'tamamlandi', tamamlanmaZamani:new Date(), stravaLink:link}).then(()=>{ alert("Kaydedildi!"); renderUniversalCalendar(user.email,'student'); sendMail(COACH_EMAIL, "Bitti", user.email+" tamamladı.");sendPushNotification(COACH_EMAIL, "Bir öğrenci antrenmanı tamamladı! ✅"); }).catch(()=>alert("Program yok")); }
         function yorumEkle(email,tarih){ const y=prompt("Yorum:"); if(y) db.collection("users").doc(email).collection("history").doc(tarih).update({kocYorumu:y}).then(()=>{ renderUniversalCalendar(email,'admin'); }); }
         function adminListesiniYukle(){ const sel=document.getElementById('studentSelect'); sel.innerHTML="<option>Yükleniyor...</option>"; db.collection("users").where("rol","==","ogrenci").get().then(s=>{ sel.innerHTML=""; s.forEach(d=>{ let o=document.createElement('option'); o.value=d.id; o.text=d.data().isim; sel.appendChild(o); }); secilenOgrenciyiGetir(); }); }
         function secilenOgrenciyiGetir(){ const id=document.getElementById('studentSelect').value; if(!id)return; adminSelectedUserEmail=id; adminCalDate=new Date(); db.collection("users").doc(id).get().then(d=>{ document.getElementById('studentStats').style.display='block'; document.getElementById('studentStats').innerHTML=`Boy:${d.data().boy} | Kilo:${d.data().kilo}`; db.collection("users").doc(id).collection("history").doc(bugun).get().then(h=>{ document.getElementById('workoutInput').value=h.exists?h.data().program:""; }); renderUniversalCalendar(id,'admin'); }); }
-        function kaydet(){ const id=document.getElementById('studentSelect').value; const p=document.getElementById('workoutInput').value; if(id) db.collection("users").doc(id).collection("history").doc(bugun).set({program:p, durum:'bekliyor', tarih:bugun}).then(()=>{ alert("Yayınlandı!"); secilenOgrenciyiGetir(); sendMail(id,"Yeni Program","Koçun program yazdı."); }); }
+        function kaydet(){ const id=document.getElementById('studentSelect').value; const p=document.getElementById('workoutInput').value; if(id) db.collection("users").doc(id).collection("history").doc(bugun).set({program:p, durum:'bekliyor', tarih:bugun}).then(()=>{ alert("Yayınlandı!"); secilenOgrenciyiGetir(); sendMail(id,"Yeni Program","Koçun program yazdı.");sendPushNotification(id, "Yeni antrenman programın hazır! 🏃‍♂️"); }); }
         function ogrenciyiSil(){ if(confirm("Sil?")) db.collection("users").doc(document.getElementById('studentSelect').value).delete().then(()=>adminListesiniYukle()); }
         function sablonuUygula(){ const v=document.getElementById('templateSelect').value; const s={"baslangic":"🔰 BAŞLANGIÇ\n- 10dk Yürüyüş\n- 3x12 Squat","kardiyo":"🔥 KARDİYO\n- 20dk Koşu","bacak":"🦵 BACAK\n- 4x12 Squat","longrun":"🏃 UZUN KOŞU\n- 60dk","interval":"⚡ İNTERVAL\n- 8x 2dk"}; if(s[v])document.getElementById('workoutInput').value=s[v]; }
         function cikisYap(){ localStorage.removeItem('adminLogged'); auth.signOut().then(()=>location.reload()); }
