@@ -8,6 +8,12 @@
     <link rel="stylesheet" href="style.css"> 
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400&family=Poppins:wght@600;700&display=swap" rel="stylesheet">
     
+    <link rel="manifest" href="manifest.json">
+    <meta name="theme-color" content="#0B132B">
+    <link rel="apple-touch-icon" href="CP_Logo.png"> 
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+
     <style>
         /* Gerekli olan temel stiller (style.css yüklenmezse diye yedek) */
         .hidden { display: none !important; }
@@ -205,6 +211,16 @@
     <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
 
     <script>
+
+        // --- PWA REGISTER (Service Worker'ı Başlat) ---
+        if ('serviceWorker' in navigator) {
+            window.addEventListener('load', () => {
+                navigator.serviceWorker.register('/sw.js')
+                    .then(reg => console.log('PWA Servis Çalışıyor', reg))
+                    .catch(err => console.log('PWA Hatası', err));
+            });
+        }
+        
         // --- 1. AYARLAR (DİKKAT: Tırnak işaretlerini silme!) ---
         const firebaseConfig = {
   apiKey: "AIzaSyAMi1g8d-nUagKV1bMjSjtOyJKX19s76BY",
