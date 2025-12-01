@@ -202,7 +202,7 @@ a { color: #FF6B35; text-decoration: none; font-weight: bold; cursor: pointer; }
 /* --- 6. TAKVİM (GRID SYSTEM) --- */
 .calendar-controls {
     display: flex; justify-content: space-between; align-items: center;
-    margin-bottom: 10px; background: #1F1F1F; padding: 10px; border-radius: 8px;
+    margin-bottom: 10px; background: ; padding: 10px; border-radius: 8px;
     border: 1px solid #333;
 }
 
@@ -220,18 +220,18 @@ a { color: #FF6B35; text-decoration: none; font-weight: bold; cursor: pointer; }
 
 .calendar-grid {
     display: grid;
-    grid-template-columns: repeat(7, 1fr);
-    gap: 6px;
+    grid-template-columns: repeat(7, 4fr);
+    gap: 8px;
     margin-bottom: 20px;
 }
 
 .day-header {
-    text-align: center; font-size: 10px; color: #666; padding-bottom: 5px;
+    text-align: center; font-size: 12px; color: #000000; padding-bottom: 5px;
 }
 
 .day-card {
-    background: #1F1F1F;
-    border-radius: 6px;
+    background: #ffffff;
+    border-radius: 10px;
     padding: 5px;
     text-align: center;
     min-height: 45px;
@@ -239,7 +239,7 @@ a { color: #FF6B35; text-decoration: none; font-weight: bold; cursor: pointer; }
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    border: 1px solid #333;
+    border: 1px solid #FF6B35;
     font-size: 12px;
     cursor: pointer;
     transition: 0.2s;
@@ -247,11 +247,11 @@ a { color: #FF6B35; text-decoration: none; font-weight: bold; cursor: pointer; }
 
 /* Takvim Durum Renkleri */
 .day-other-month { opacity: 0.3; }
-.day-today { border-color: #FF6B35 !important; box-shadow: 0 0 8px rgba(255, 107, 53, 0.3); }
-.day-done { background: rgba(76, 175, 80, 0.2); border-color: #4caf50; color: #a5d6a7; } /* Yeşil */
-.day-missed { background: rgba(244, 67, 54, 0.15); border-color: #d32f2f; color: #ef9a9a; } /* Kırmızı */
-.day-rest { background: rgba(158, 158, 158, 0.15); border-color: #9e9e9e; color: #aaa; } /* Gri */
-.day-active-rest { background: rgba(221, 160, 221, 0.15); border-color: #DDA0DD; color: #DDA0DD; } /* Mor */
+.day-today { border-color: #0B132B !important; box-shadow: 0 0 8px rgba(255, 107, 53, 0.3); }
+.day-done { background: rgba(76, 175, 80, 0.2); border-color: #08f710; color: #a5d6a7; } /* Yeşil */
+.day-missed { background: rgba(244, 67, 54, 0.15); border-color: #e70707; color: #ef9a9a; } /* Kırmızı */
+.day-rest { background: rgba(219, 214, 214, 0.911); border-color: #1274b4; color: #aaa; } /* mavi */
+.day-active-rest { background: rgba(221, 160, 221, 0.15); border-color: #aa06aa; color: #DDA0DD; } /* Mor */
 
 /* --- 7. GEÇMİŞ TABLOSU VE LİSTELER --- */
 .history-table {
