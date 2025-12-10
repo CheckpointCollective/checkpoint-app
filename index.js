@@ -8,14 +8,12 @@ app.use(cors());
 app.use(express.json());
 app.use(express.static(path.join(__dirname, 'public')));
 
-// --- BİLDİRİM AYARLARI ---
-const ONESIGNAL_APP_ID = '8d4c0c13-12bb-436a-95d1-bd64eaa1a051'; //App ID'n
-const ONESIGNAL_API_KEY = 'd7gtusckze2hvyep2wy4ifxrd'; // Senin verdiğin API Key
-// --- STRAVA AYARLARI ---
-const STRAVA_CLIENT_ID = '186518';       
-const STRAVA_CLIENT_SECRET = '2e89267133a6e48c3fc71787a8eaba4bbb71c863'; // Strava Secret'ını 
+// --- GÜVENLİK NOTU: Bu değerleri Render'dan çekeceğiz ---
+const ONESIGNAL_APP_ID = process.env.ONESIGNAL_APP_ID || '8d4c0c13-12bb-436a-95d1-bd64eaa1a051'; 
+const ONESIGNAL_API_KEY = process.env.ONESIGNAL_API_KEY; 
+const STRAVA_CLIENT_ID = process.env.STRAVA_CLIENT_ID || '186518';       
+const STRAVA_CLIENT_SECRET = process.env.STRAVA_CLIENT_SECRET; 
 const PORT = process.env.PORT || 3000;
-
 
 // 1. BİLDİRİM GÖNDERME
 app.post('/api/send-notification', async (req, res) => {
@@ -58,10 +56,11 @@ app.post('/api/strava/activities', async (req, res) => {
     } catch (error) { res.status(500).json({ error: "Aktiviteler alınamadı" }); }
 });
 
-// 4. STRAVA GİRİŞ
+// 4. STRAVA GİRİŞ (URL Dinamik Hale Getirildi)
 app.get('/auth/strava', (req, res) => {
-    // Render adresini buraya doğru yazdığından emin ol!
-    const redirectUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=https://checkpoint-collective.onrender.com/exchange_token&approval_prompt=force&scope=activity:read_all`;
+    // Render URL'ini otomatik algılar veya localhost kullanır
+    const baseUrl = process.env.RENDER_EXTERNAL_URL || `http://localhost:${PORT}`;
+    const redirectUrl = `https://www.strava.com/oauth/authorize?client_id=${STRAVA_CLIENT_ID}&response_type=code&redirect_uri=${baseUrl}/exchange_token&approval_prompt=force&scope=activity:read_all`;
     res.redirect(redirectUrl);
 });
 
