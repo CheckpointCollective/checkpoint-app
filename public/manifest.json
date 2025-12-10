@@ -16,11 +16,6 @@
       "src": "CP_Logo.png",
       "sizes": "512x512",
       "type": "image/png"
-    },
-    {
-        "src": "CP_Logo.png",
-        "sizes": "512x512",
-        "type": "image/jpeg"
     }
   ]
 }
