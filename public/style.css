@@ -5,6 +5,7 @@
     --green: #4ECDC4;
     --white: #ffffff;
     --gray: #8892b0;
+    --red: #ff4444;
 }
 body { background-color: var(--navy); color: var(--white); font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
 h1, h2, h3, h4 { margin: 0; font-weight: 800; }
@@ -30,7 +31,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 .news-card { display: flex; gap: 15px; align-items: center; }
 .news-img { width: 50px; height: 50px; background: #333; border-radius: 8px; flex-shrink: 0; }
 
-/* --- YENİ TAKVİM STİLLERİ --- */
+/* --- TAKVİM STİLLERİ --- */
 .calendar-header-card { display: flex; justify-content: space-between; align-items: center; margin-bottom: 20px; }
 .nav-arrow { background: none; border: 1px solid var(--gray); color: white; border-radius: 50%; width: 30px; height: 30px; cursor: pointer; }
 
@@ -47,7 +48,7 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
     border: 1px solid transparent;
 }
 .day-cell.empty { background: transparent; cursor: default; }
-.day-cell.has-race { border-bottom: 3px solid var(--green); } /* Yarış varsa altı yeşil */
+.day-cell.has-race { border-bottom: 3px solid var(--green); } 
 .day-cell.selected { border: 2px solid var(--orange); background: rgba(255, 107, 53, 0.2); }
 .day-cell.today { background: #333; color: var(--orange); }
 
@@ -58,7 +59,10 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 
 .race-mini-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
 
-/* MODAL (POP-UP) */
+/* SİLME BUTONU (YENİ) */
+.btn-delete { background: rgba(255, 68, 68, 0.2); color: var(--red); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 10px; }
+
+/* MODAL */
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
 .modal-card { background: var(--navy); width: 80%; max-width: 300px; padding: 20px; border-radius: 16px; border: 1px solid var(--orange); text-align: center; }
 

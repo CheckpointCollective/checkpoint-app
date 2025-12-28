@@ -1,14 +1,14 @@
-console.log("Checkpoint 360 - Takvim Sistemi 📅");
+console.log("Checkpoint 360 - Takvim ve Silme Sistemi 📅🗑️");
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- TAKVİM DEĞİŞKENLERİ ---
+// --- DEĞİŞKENLER ---
 let currentYear = new Date().getFullYear();
-let currentMonth = new Date().getMonth(); // 0 = Ocak
-let selectedFullDate = null; // "2025-05-15" formatında
-let allRaces = []; // Veritabanından gelen tüm yarışlar burada tutulur
+let currentMonth = new Date().getMonth(); 
+let selectedFullDate = null; 
+let allRaces = []; 
 let currentUserRole = 'free';
 
 // --- GİRİŞ ---
@@ -27,7 +27,6 @@ auth.onAuthStateChanged(async (user) => {
                 name: user.displayName, email: user.email, photo: user.photoURL, role: 'free', joinedAt: new Date()
             });
         }
-        // Rolü hafızaya al (Takvim butonu için lazım)
         currentUserRole = doc.data().role || 'free';
         updateUIForUser(user, currentUserRole);
     } else {
@@ -36,7 +35,7 @@ auth.onAuthStateChanged(async (user) => {
     }
     
     loadNews();
-    loadRaces(); // Yarışları çek ve takvimi çiz
+    loadRaces();
 });
 
 // --- VERİ ÇEKME ---
@@ -60,14 +59,16 @@ function loadNews() {
 
 // --- TAKVİM MANTIĞI ---
 function loadRaces() {
-    // Tüm yarışları çek ve hafızaya al
     db.collection('races').onSnapshot(snapshot => {
         allRaces = [];
         snapshot.forEach(doc => {
-            allRaces.push(doc.data()); // {name: '...', date: '2025-01-15', category: '...'}
+            // ÖNEMLİ: Artık döküman ID'sini de (doc.id) kaydediyoruz! Silmek için lazım.
+            const raceData = doc.data();
+            raceData.id = doc.id; 
+            allRaces.push(raceData); 
         });
-        renderCalendar(); // Veri geldikçe takvimi yenile
-        // Eğer bir gün seçiliyse onun detayını da yenile
+        renderCalendar();
+        // Eğer şu an bir güne bakıyorsan ve o günün verisi değiştiyse, ekranı yenile
         if(selectedFullDate) showDayDetails(selectedFullDate);
     });
 }
@@ -76,27 +77,21 @@ function renderCalendar() {
     const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     document.getElementById('currentMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`;
     
-    const firstDay = new Date(currentYear, currentMonth, 1).getDay(); // Ayın 1'i hangi gün? (0=Pazar)
-    // Pazartesi'yi başa almak için küçük bir matematik (Pazar 7 olsun)
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const startDay = firstDay === 0 ? 6 : firstDay - 1; 
-    
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     
     let html = '';
 
-    // Boş kutular (Ayın başındaki boşluklar)
     for (let i = 0; i < startDay; i++) {
         html += `<div class="day-cell empty"></div>`;
     }
 
-    // Dolu kutular
     for (let day = 1; day <= daysInMonth; day++) {
-        // Tarih formatı: "2025-01-05" (Veritabanı ile eşleşmesi için 0 ekliyoruz)
         const monthStr = (currentMonth + 1).toString().padStart(2, '0');
         const dayStr = day.toString().padStart(2, '0');
         const fullDate = `${currentYear}-${monthStr}-${dayStr}`;
         
-        // Bu tarihte yarış var mı kontrol et
         const hasRace = allRaces.some(r => r.date === fullDate);
         const raceClass = hasRace ? 'has-race' : '';
         const todayClass = (new Date().toISOString().slice(0,10) === fullDate) ? 'today' : '';
@@ -124,35 +119,38 @@ function changeMonth(direction) {
 }
 
 function selectDate(fullDate, element) {
-    // Görsel seçim
     document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected'));
     element.classList.add('selected');
-    
     selectedFullDate = fullDate;
     showDayDetails(fullDate);
 }
 
 function showDayDetails(dateStr) {
-    // Paneli aç
     document.getElementById('day-details-panel').style.display = 'block';
-    
-    // Tarihi formatla (2025-01-15 -> 15/01/2025 gibi basit gösterim)
     const [y, m, d] = dateStr.split('-');
     document.getElementById('selectedDateLabel').innerText = `${d}.${m}.${y}`;
 
-    // O güne ait yarışları bul
     const racesThatDay = allRaces.filter(r => r.date === dateStr);
     
     let html = '';
     if (racesThatDay.length > 0) {
         racesThatDay.forEach(race => {
+            // Eğer Adminsen Çöp Kutusu Görünsün
+            let deleteBtn = '';
+            if (currentUserRole === 'admin') {
+                deleteBtn = `<button class="btn-delete" onclick="deleteRace('${race.id}')">🗑️</button>`;
+            }
+
             html += `
             <div class="race-mini-card">
-                <div>
+                <div style="flex:1;">
                     <div style="font-weight:bold;">${race.name}</div>
                     <div style="font-size:11px; color:gray;">${race.category}</div>
                 </div>
-                <div style="font-size:16px;">🏁</div>
+                <div style="display:flex; align-items:center;">
+                    <span style="font-size:16px;">🏁</span>
+                    ${deleteBtn}
+                </div>
             </div>`;
         });
     } else {
@@ -160,7 +158,6 @@ function showDayDetails(dateStr) {
     }
     document.getElementById('selected-day-races').innerHTML = html;
 
-    // Admin ise ekle butonunu göster
     if (currentUserRole === 'admin') {
         document.getElementById('btnAddRaceToDay').style.display = 'block';
     } else {
@@ -168,7 +165,21 @@ function showDayDetails(dateStr) {
     }
 }
 
-// --- YENİ YARIŞ EKLEME (MODAL) ---
+// --- SİLME FONKSİYONU (YENİ) ---
+function deleteRace(raceId) {
+    if(confirm("Bu yarışı silmek istediğine emin misin?")) {
+        db.collection('races').doc(raceId).delete()
+            .then(() => {
+                // Silindiğinde loadRaces içindeki onSnapshot otomatik çalışıp ekranı yenileyecek
+                console.log("Yarış silindi.");
+            })
+            .catch(error => {
+                alert("Silinemedi: " + error.message);
+            });
+    }
+}
+
+// --- YARIŞ EKLEME ---
 function openAddModal() {
     if (!selectedFullDate) return;
     document.getElementById('modalDateLabel').innerText = "Seçilen Tarih: " + selectedFullDate;
@@ -187,15 +198,13 @@ function saveRaceFromModal() {
 
     if (!name) return alert("İsim girmedin!");
 
-    // Veritabanına kaydet (Artık tam tarih olarak kaydediyoruz)
     db.collection('races').add({
         name: name,
         category: cat,
-        date: selectedFullDate, // "2025-01-15" formatında
+        date: selectedFullDate,
         createdAt: new Date()
     }).then(() => {
         closeAddModal();
-        // Takvim otomatik güncellenecek (onSnapshot sayesinde)
     }).catch(e => alert(e.message));
 }
 
@@ -249,7 +258,6 @@ function saveNews() {
     const tag = document.getElementById('newsTag').value;
     const content = document.getElementById('newsContent').value;
     if (!title) return alert("Başlık giriniz!");
-
     db.collection('news').add({
         title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35'
     }).then(() => {
