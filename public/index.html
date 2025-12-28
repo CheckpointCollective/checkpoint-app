@@ -3,15 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-    <title>Checkpoint 360</title>
+    <title>Checkpoint Collective</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Bebas+Neue&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
 
+    <div id="splash-screen">
+        <div class="splash-content">
+            <img src="alternatif.png" alt="Checkpoint Collective Logo" class="splash-logo-img">
+            <p>Yükleniyor...</p>
+        </div>
+    </div>
+
     <div class="app-header">
-        <div class="brand-logo">CHECKPOINT <span class="accent-text">360</span></div>
-        <div id="header-status" class="status-badge">Misafir</div>
+        <div class="brand-logo-container">
+            <img src="alternatif.png" alt="Checkpoint Collective Logo" class="header-logo-img">
+        </div>
+        <div id="header-profile-pill" class="profile-pill guest">
+            <span class="material-icons-round icon">account_circle</span>
+            <span id="header-status-text">Misafir</span>
+        </div>
     </div>
 
     <div id="main-container">
@@ -31,7 +44,7 @@
             <div class="calendar-grid-header">
                 <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
             </div>
-            <div id="calendar-days" class="calendar-grid"></div>
+            <div id="calendar-days" class="calendar-grid compact"></div>
             
             <div id="day-details-panel" class="day-details-card" style="display:none;">
                 <div class="details-header">
@@ -68,10 +81,7 @@
 
             <div class="card" style="border: 1px solid #4a90e2;">
                 <h3 style="color:#4a90e2">👥 Öğrencilerim</h3>
-                <p style="font-size:11px; color:gray; margin-bottom:10px;">Sisteme kayıtlı kullanıcılar:</p>
-                <div id="user-list-container">
-                    <p>Yükleniyor...</p>
-                </div>
+                <div id="user-list-container"><p>Yükleniyor...</p></div>
             </div>
 
             <button onclick="switchView('locker')" class="btn-secondary">🔙 Locker'a Dön</button>
