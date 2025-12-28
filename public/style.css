@@ -6,82 +6,29 @@
     --white: #ffffff;
     --gray: #8892b0;
     --red: #ff4444;
+    --gold: #FFD700;
 }
 body { background-color: var(--navy); color: var(--white); font-family: 'Inter', sans-serif; margin: 0; padding-bottom: 80px; -webkit-tap-highlight-color: transparent; }
 h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 .page-title { font-family: 'Bebas Neue'; font-size: 32px; margin-bottom: 20px; letter-spacing: 1px; }
 
-/* SPLASH SCREEN */
-#splash-screen {
-    position: fixed; top: 0; left: 0; width: 100%; height: 100%;
-    background-color: var(--navy);
-    display: flex; justify-content: center; align-items: center;
-    z-index: 9999; transition: opacity 0.5s ease-out;
-}
+/* SPLASH */
+#splash-screen { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: var(--navy); display: flex; justify-content: center; align-items: center; z-index: 9999; transition: opacity 0.5s ease-out; }
 #splash-screen.hidden { opacity: 0; pointer-events: none; }
 .splash-logo-img { max-width: 150px; animation: fadeUp 0.8s ease-out; }
 
-/* --- HEADER DÜZENLEMESİ --- */
-.app-header {
-    padding: 15px 20px;
-    display: flex; justify-content: space-between; align-items: center;
-    background: var(--navy); position: sticky; top: 0; z-index: 50;
-    border-bottom: 1px solid rgba(255,255,255,0.05);
-}
-
-/* SEÇENEK 1: Resim Logo Ayarı */
-.header-logo-img { height: 35px; width: auto; }
-
-/* SEÇENEK 2: Tipografik Logo (Yazı) */
+/* HEADER */
+.app-header { padding: 15px 20px; display: flex; justify-content: space-between; align-items: center; background: var(--navy); position: sticky; top: 0; z-index: 50; border-bottom: 1px solid rgba(255,255,255,0.05); }
 .brand-text-logo { font-family: 'Bebas Neue'; font-size: 24px; letter-spacing: 1px; color: white; }
 .brand-text-logo .symbol { color: var(--orange); margin-right: 5px; }
 .brand-text-logo .accent { color: var(--orange); }
-
-/* Sağ Üst Profil Yuvarlağı */
-.profile-circle {
-    width: 38px; height: 38px;
-    background: var(--navy-light);
-    border-radius: 50%;
-    display: flex; align-items: center; justify-content: center;
-    border: 1px solid rgba(255,255,255,0.2);
-    cursor: pointer;
-    overflow: hidden; /* Resim taşmasın */
-    transition: 0.3s;
-}
+.profile-circle { width: 38px; height: 38px; background: var(--navy-light); border-radius: 50%; display: flex; align-items: center; justify-content: center; border: 1px solid rgba(255,255,255,0.2); cursor: pointer; overflow: hidden; transition: 0.3s; }
 .profile-circle:active { transform: scale(0.95); }
 .profile-circle.active { border-color: var(--orange); }
 .guest-icon { color: var(--gray); font-size: 20px; }
 .user-avatar-small { width: 100%; height: 100%; background-size: cover; background-position: center; }
 
-/* --- TAKVİM KÜÇÜLTME --- */
-.calendar-wrapper {
-    max-width: 320px; /* Genişliği kısıtla */
-    margin: 0 auto;   /* Ortala */
-}
-.calendar-header-card { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
-.calendar-header-card h2 { font-size: 18px; } /* Ay ismi küçüldü */
-
-.nav-arrow { background: none; border: 1px solid var(--gray); color: white; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; }
-
-.calendar-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--gray); margin-bottom: 5px; }
-.calendar-grid.compact { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; } /* Boşluk azaldı */
-
-.day-cell {
-    aspect-ratio: 1; 
-    background: var(--navy-light); 
-    border-radius: 6px;
-    display: flex; flex-direction: column; align-items: center; justify-content: center;
-    font-size: 12px; /* Yazı küçüldü */
-    font-weight: 600;
-    cursor: pointer; position: relative;
-    border: 1px solid transparent;
-}
-.day-cell.empty { background: transparent; cursor: default; }
-.day-cell.has-race { border-bottom: 2px solid var(--green); } 
-.day-cell.selected { border: 2px solid var(--orange); background: rgba(255, 107, 53, 0.2); }
-.day-cell.today { background: #333; color: var(--orange); }
-
-/* DİĞERLERİ AYNI */
+/* GENEL UI */
 #main-container { padding: 20px; }
 .view { display: none; animation: fadeUp 0.3s ease; }
 .view.active { display: block; }
@@ -89,10 +36,46 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 .card, .news-card { background: var(--navy-light); border-radius: 16px; padding: 15px; margin-bottom: 15px; }
 .news-card { display: flex; gap: 15px; align-items: center; }
 .news-img { width: 50px; height: 50px; background: #333; border-radius: 8px; flex-shrink: 0; }
+
+/* TAKVİM */
+.calendar-wrapper { max-width: 320px; margin: 0 auto; }
+.calendar-header-card { display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px; }
+.calendar-header-card h2 { font-size: 18px; }
+.nav-arrow { background: none; border: 1px solid var(--gray); color: white; border-radius: 50%; width: 28px; height: 28px; cursor: pointer; }
+.calendar-grid-header { display: grid; grid-template-columns: repeat(7, 1fr); text-align: center; font-size: 10px; color: var(--gray); margin-bottom: 5px; }
+.calendar-grid.compact { display: grid; grid-template-columns: repeat(7, 1fr); gap: 3px; }
+.day-cell { aspect-ratio: 1; background: var(--navy-light); border-radius: 6px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; font-weight: 600; cursor: pointer; position: relative; border: 1px solid transparent; }
+.day-cell.empty { background: transparent; cursor: default; }
+
+/* YENİ: Altın Yıldız Efekti */
+.day-cell.has-my-race { border: 1px solid var(--gold); background: rgba(255, 215, 0, 0.1); }
+.day-cell.has-my-race::after { content: '★'; position: absolute; bottom: 2px; font-size: 10px; color: var(--gold); line-height: 1; }
+/* Standart Yeşil Çizgi (Sadece benim olmayan yarışlarda kalsın diye override etmiyoruz ama öncelik JS'de) */
+.day-cell.has-race:not(.has-my-race) { border-bottom: 2px solid var(--green); } 
+
+.day-cell.selected { border: 2px solid var(--orange); background: rgba(255, 107, 53, 0.2); }
+.day-cell.today { background: #333; color: var(--orange); }
+
+/* GÜN DETAYI */
 .day-details-card { background: var(--navy-light); border-radius: 16px; padding: 20px; margin-top: 25px; border-left: 4px solid var(--orange); animation: fadeUp 0.3s ease; }
 .details-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; border-bottom: 1px solid rgba(255,255,255,0.1); padding-bottom: 10px; }
 .day-badge { background: var(--orange); color: white; font-size: 10px; padding: 2px 8px; border-radius: 4px; }
 .race-mini-card { background: rgba(255,255,255,0.05); padding: 10px; border-radius: 8px; margin-bottom: 8px; display: flex; justify-content: space-between; align-items: center; }
+
+/* LOCKER YARIŞ LİSTESİ (YENİ) */
+.my-race-item { 
+    display: flex; align-items: center; gap: 15px; 
+    background: rgba(255,255,255,0.03); 
+    padding: 12px; border-radius: 10px; margin-bottom: 8px; 
+    border-left: 3px solid var(--gold);
+}
+.my-race-date { text-align: center; min-width: 40px; }
+.my-race-day { font-size: 14px; font-weight: bold; color: var(--gold); }
+.my-race-month { font-size: 10px; color: var(--gray); text-transform: uppercase; }
+
+/* BUTONLAR */
+.btn-target { background: transparent; border: 1px solid var(--gold); color: var(--gold); padding: 6px 12px; border-radius: 20px; font-size: 10px; cursor: pointer; transition: 0.3s; }
+.btn-target:hover, .btn-target.added { background: var(--gold); color: black; }
 .btn-delete { background: rgba(255, 68, 68, 0.2); color: var(--red); border: none; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; cursor: pointer; margin-left: 10px; }
 .modal-overlay { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 100; display: none; align-items: center; justify-content: center; }
 .modal-card { background: var(--navy); width: 80%; max-width: 300px; padding: 20px; border-radius: 16px; border: 1px solid var(--orange); text-align: center; }

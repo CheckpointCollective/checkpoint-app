@@ -17,14 +17,13 @@
     </div>
 
     <div class="app-header">
-        
         <div class="brand-text-logo">
             <span class="symbol">◉</span> CHECKPOINT <span class="accent">COLLECTIVE</span>
         </div>
-
+        
         <div id="profile-trigger" class="profile-circle" onclick="switchView('locker')">
             <span class="material-icons-round guest-icon">person_outline</span>
-            </div>
+        </div>
     </div>
 
     <div id="main-container">
@@ -42,11 +41,9 @@
                     <h2 id="currentMonthLabel">...</h2>
                     <button class="nav-arrow" onclick="changeMonth(1)">❯</button>
                 </div>
-                
                 <div class="calendar-grid-header">
                     <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
                 </div>
-                
                 <div id="calendar-days" class="calendar-grid compact"></div>
             </div>
             
@@ -56,7 +53,8 @@
                     <span class="day-badge">SEÇİLDİ</span>
                 </div>
                 <div id="selected-day-races"></div>
-                <button id="btnAddRaceToDay" class="btn-primary" style="margin-top:10px; display:none;" onclick="openAddModal()">＋ EKLE</button>
+                
+                <button id="btnAddRaceToDay" class="btn-primary" style="margin-top:10px; display:none;" onclick="openAddModal()">＋ SİSTEME YARIŞ EKLE</button>
             </div>
         </div>
 
@@ -66,15 +64,22 @@
                 <h3>Misafir Kullanıcı</h3>
                 <span class="role-badge">Giriş Yapılmadı</span>
             </div>
+
             <div class="login-prompt card">
                 <p>Verilerini görmek için giriş yapmalısın.</p>
                 <button id="btnLogin" class="btn-primary">GOOGLE İLE GİRİŞ YAP</button>
+            </div>
+
+            <div id="my-races-section" style="display:none;">
+                <h4 style="margin: 20px 0 10px 0; font-size: 14px; color: var(--orange); letter-spacing: 1px;">YARIŞ TAKVİMİM</h4>
+                <div id="my-races-list">
+                    <p style="color:gray; font-size:12px;">Henüz bir hedef yarış eklemedin.</p>
+                </div>
             </div>
         </div>
 
         <div id="view-admin" class="view">
             <h2 class="page-title" style="color:var(--orange)">YÖNETİCİ</h2>
-            
             <div class="card">
                 <h3>📢 Haber Ekle</h3>
                 <input type="text" id="newsTitle" placeholder="Başlık" class="input-field">
@@ -82,7 +87,6 @@
                 <textarea id="newsContent" placeholder="İçerik" class="input-field" rows="2"></textarea>
                 <button onclick="saveNews()" class="btn-primary">YAYINLA</button>
             </div>
-
             <div class="card" style="border: 1px solid #4a90e2;">
                 <h3 style="color:#4a90e2">👥 Öğrenciler</h3>
                 <div id="user-list-container"><p>Yükleniyor...</p></div>
