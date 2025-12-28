@@ -1,95 +1,115 @@
-/* --- DESIGN TOKENS (Branded Light Theme) --- */
-:root {
-    --cp-navy: #0B132B;
-    --cp-orange: #FF6B35;
-    --bg-body: #F4F6F8;
-    --bg-card: #FFFFFF;
-    --text-main: #1F1F1F;
-    --text-muted: #6B7280;
-    --border-color: #E5E7EB;
-    --radius-card: 16px;
-    --radius-btn: 8px;
-    --shadow-card: 0 4px 20px rgba(0, 0, 0, 0.05);
-    --header-height: 70px;
+::root {
+    /* RENK PALETİ */
+    --navy: #0B132B;
+    --navy-light: #1C2541;
+    --orange: #FF6B35;
+    --green: #4ECDC4;
+    --white: #ffffff;
+    --gray: #8892b0;
 }
 
-/* SIFIRLAMA */
-* { margin: 0; padding: 0; box-sizing: border-box; touch-action: manipulation; }
 body {
-    background-color: var(--bg-body);
+    background-color: var(--navy);
+    color: var(--white);
     font-family: 'Inter', sans-serif;
-    color: var(--text-main);
-    display: flex; justify-content: center; align-items: flex-start;
-    min-height: 100vh;
-    padding-top: var(--header-height); padding-bottom: 80px;
-}
-.hidden { display: none !important; }
-
-/* ANA TAŞIYICI */
-.container { width: 100%; max-width: 600px; margin: 0 auto; padding: 20px; animation: fadeIn 0.4s ease-out; }
-@keyframes fadeIn { from { opacity: 0; transform: translateY(10px); } to { opacity: 1; transform: translateY(0); } }
-
-/* HEADER */
-.app-header {
-    position: fixed; top: 0; left: 0; width: 100%; height: var(--header-height);
-    background-color: var(--cp-navy); display: flex; align-items: center; justify-content: space-between;
-    padding: 0 20px; z-index: 1000; box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-}
-.header-logo-img { height: 40px; width: auto; object-fit: contain; }
-.header-user { color: white; font-size: 12px; opacity: 0.8; font-family: 'Poppins', sans-serif; }
-
-/* KARTLAR */
-.card, .chart-container, .day-card, .login-card {
-    background-color: var(--bg-card); border-radius: var(--radius-card); padding: 20px; margin-bottom: 20px;
-    box-shadow: var(--shadow-card); border: 1px solid var(--border-color);
+    margin: 0;
+    padding-bottom: 80px; /* Navbar boşluğu */
+    -webkit-tap-highlight-color: transparent;
 }
 
 /* TİPOGRAFİ */
-h1, h2, h3, h4 { font-family: 'Poppins', sans-serif; color: var(--cp-navy); margin-bottom: 10px; }
-h1 { font-size: 28px; color: var(--cp-orange); } h2 { font-size: 24px; } h3 { font-size: 18px; font-weight: 600; color: var(--cp-orange); }
-.subtitle { color: var(--text-muted); font-size: 13px; margin-bottom: 20px; }
-.welcome-title { color: var(--cp-navy); margin: 0; font-size: 20px; }
+h1, h2, h3, h4 { margin: 0; font-weight: 800; }
+.page-title { font-family: 'Bebas Neue'; font-size: 32px; margin-bottom: 20px; letter-spacing: 1px; }
 
-/* FORMLAR */
-.input-group { margin-bottom: 15px; text-align: left; }
-label { display: block; margin-bottom: 6px; font-size: 12px; color: var(--text-muted); font-weight: 600; text-transform: uppercase; }
-input, select, textarea { width: 100%; padding: 12px; border-radius: var(--radius-btn); border: 1px solid var(--border-color); background-color: #F9FAFB; color: var(--text-main); font-family: 'Inter', sans-serif; font-size: 15px; outline: none; }
-input:focus { border-color: var(--cp-orange); background: white; }
+/* HEADER */
+.app-header {
+    padding: 20px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    background: var(--navy);
+    position: sticky;
+    top: 0;
+    z-index: 50;
+}
+.brand-logo { font-family: 'Bebas Neue'; font-size: 24px; }
+.accent-text { color: var(--orange); }
+.status-badge { background: var(--navy-light); font-size: 11px; padding: 5px 10px; border-radius: 20px; }
 
-/* BUTONLAR */
-.btn-primary { width: 100%; padding: 14px; background-color: var(--cp-orange); color: white; border: none; border-radius: var(--radius-btn); font-family: 'Poppins', sans-serif; font-weight: 600; font-size: 14px; cursor: pointer; }
-.btn-primary:hover { background-color: #e55a2b; transform: translateY(-1px); }
-.btn-outline { background: transparent; border: 1px solid var(--cp-orange); color: var(--cp-orange); width: 100%; padding: 12px; border-radius: var(--radius-btn); font-weight: 600; cursor: pointer; margin-top: 10px; }
-.btn-strava { background: #FC4C02; color: white; width: 100%; padding: 12px; border-radius: var(--radius-btn); text-decoration: none; font-weight: bold; display: block; text-align: center; margin-bottom: 10px; }
-.footer-text { margin-top: 20px; font-size: 14px; color: var(--text-muted); }
-.footer-text a { color: var(--cp-orange); text-decoration: none; font-weight: 600; cursor: pointer; }
+/* ANA YAPI */
+#main-container { padding: 20px; }
+.view { display: none; animation: fadeUp 0.3s ease; }
+.view.active { display: block; }
 
-/* TAKVİM */
-.calendar-controls { display: flex; justify-content: space-between; align-items: center; margin-bottom: 15px; }
-.cal-btn { background: none; border: none; color: var(--cp-orange); font-size: 20px; cursor: pointer; }
-.cal-title { font-weight: bold; font-size: 16px; color: var(--cp-navy); font-family: 'Poppins', sans-serif; }
-.view-toggle { display: flex; background: #F3F4F6; border-radius: 8px; padding: 4px; margin-bottom: 15px; }
-.toggle-btn { flex: 1; border: none; background: none; color: var(--text-muted); padding: 8px; cursor: pointer; font-size: 12px; font-weight: 600; border-radius: 6px; }
-.toggle-btn.active { background: white; color: var(--cp-orange); box-shadow: 0 2px 4px rgba(0,0,0,0.05); }
-.calendar-grid { display: grid; grid-template-columns: repeat(7, 1fr); gap: 8px; margin-bottom: 20px; }
-.day-card { background: white; border: 1px solid var(--border-color); border-radius: 8px; min-height: 50px; padding: 2px; display: flex; flex-direction: column; align-items: center; justify-content: center; font-size: 12px; color: var(--text-main); cursor: pointer; }
-.day-done { background-color: #E6FFFA; border-color: #38B2AC; color: #2C7A7B; }
-.day-missed { background-color: #FFF5F5; border-color: #FC8181; color: #C53030; }
-.day-rest { background-color: #F7FAFC; border-color: #CBD5E0; color: #A0AEC0; }
-.day-today { border: 2px solid var(--cp-orange) !important; }
+@keyframes fadeUp {
+    from { opacity: 0; transform: translateY(10px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* KART TASARIMLARI */
+.card, .news-card, .race-card {
+    background: var(--navy-light);
+    border-radius: 16px;
+    padding: 15px;
+    margin-bottom: 15px;
+}
+
+/* FEED EKRANI */
+.hero-card {
+    background: linear-gradient(135deg, var(--orange), #d64512);
+    padding: 20px;
+    border-radius: 16px;
+    margin-bottom: 25px;
+}
+.hero-card .tag { font-size: 10px; background: rgba(0,0,0,0.2); display: inline-block; padding: 4px 8px; border-radius: 4px; margin-bottom: 10px; font-weight: bold; }
+.hero-card h2 { font-size: 20px; line-height: 1.2; margin-bottom: 15px; }
+.action-link { font-size: 12px; font-weight: bold; cursor: pointer; }
+
+.news-card { display: flex; align-items: center; gap: 15px; }
+.news-img { width: 60px; height: 60px; background: #333; border-radius: 8px; flex-shrink: 0; }
+.news-content h4 { font-size: 14px; margin-bottom: 5px; }
+.meta { font-size: 11px; color: var(--gray); }
+
+/* YARIŞ EKRANI */
+.filter-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
+.filter-pill { background: var(--navy-light); border: none; color: var(--gray); padding: 8px 16px; border-radius: 20px; font-size: 12px; white-space: nowrap; }
+.filter-pill.active { background: var(--orange); color: white; }
+
+.race-card { display: flex; justify-content: space-between; align-items: center; }
+.race-date { text-align: center; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); }
+.race-date .day { font-size: 20px; font-weight: bold; color: var(--orange); }
+.race-date .month { font-size: 10px; }
+.race-info { flex: 1; padding-left: 15px; }
+.race-name { font-weight: bold; font-size: 15px; }
+.race-cat { font-size: 11px; color: var(--gray); }
+.btn-icon { background: var(--gray); width: 32px; height: 32px; border-radius: 50%; border: none; color: white; font-size: 18px; display: flex; align-items: center; justify-content: center; }
+
+/* LOCKER EKRANI */
+.profile-header { text-align: center; margin-bottom: 30px; }
+.avatar { width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--orange); }
+.role-badge { background: linear-gradient(90deg, #FFD700, #FFA500); color: black; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 8px; }
 
 /* ALT MENÜ */
-.bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; background-color: white; border-top: 1px solid var(--border-color); display: flex; justify-content: space-around; padding: 15px 0; z-index: 1000; }
-.nav-item { color: var(--text-muted); text-align: center; cursor: pointer; flex: 1; font-size: 11px; font-weight: 500; font-family: 'Poppins', sans-serif; }
-.nav-item.active { color: var(--cp-orange); font-weight: 700; transform: translateY(-2px); }
-.nav-icon { font-size: 22px; display: block; margin-bottom: 4px; }
+.bottom-nav {
+    position: fixed;
+    bottom: 0; left: 0; width: 100%; height: 70px;
+    background: var(--navy-light);
+    display: flex; justify-content: space-around; align-items: center;
+    border-top: 1px solid rgba(255,255,255,0.05);
+}
+.nav-item { text-align: center; opacity: 0.5; transition: 0.3s; }
+.nav-item.active { opacity: 1; color: var(--orange); transform: translateY(-2px); }
+.nav-item .icon { font-size: 22px; margin-bottom: 3px; }
+.nav-item span { font-size: 10px; font-weight: bold; }
 
-/* MODAL & CHECK-IN */
-.modal-overlay { background: rgba(0,0,0,0.5); position: fixed; top: 0; left: 0; width: 100%; height: 100%; z-index: 2000; display: none; justify-content: center; align-items: center; }
-.modal-box { background: white; width: 90%; max-width: 400px; padding: 20px; border-radius: 10px; }
-.mood-selector { display: flex; justify-content: space-between; margin-bottom: 20px; }
-.mood-option { font-size: 28px; cursor: pointer; opacity: 0.5; transition: 0.2s; filter: grayscale(100%); }
-.mood-option:hover { transform: scale(1.2); opacity: 0.8; }
-.mood-option.selected { opacity: 1; filter: grayscale(0%); transform: scale(1.3); }
-.countdown-box { background: var(--cp-navy); color: white; padding: 20px; border-radius: var(--radius-card); text-align: center; margin-bottom: 20px; border: 1px solid var(--cp-orange); }
-.countdown-time { font-family: 'Bebas Neue', sans-serif; font-size: 36px; letter-spacing: 1px; color: var(--cp-orange); }
+/* BUTONLAR */
+.btn-primary {
+    background: var(--orange);
+    color: white;
+    border: none;
+    width: 100%;
+    padding: 14px;
+    border-radius: 12px;
+    font-weight: bold;
+    font-size: 14px;
+}
