@@ -96,10 +96,23 @@
             </div>
 
             <div class="card">
-                <h4 style="color:#4a90e2; margin-bottom:10px;">🎯 HEDEF YARIŞLARI</h4>
-                <div id="student-races-list">
-                    <p>Yükleniyor...</p>
+                <h4 style="color:#4a90e2; margin-bottom:10px;">🗓️ ANTRENMAN PROGRAMI</h4>
+                <div class="calendar-wrapper">
+                    <div class="calendar-header-card">
+                        <button class="nav-arrow" onclick="changeStudentMonth(-1)">❮</button>
+                        <h2 id="studentMonthLabel">...</h2>
+                        <button class="nav-arrow" onclick="changeStudentMonth(1)">❯</button>
+                    </div>
+                    <div class="calendar-grid-header">
+                        <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
+                    </div>
+                    <div id="student-calendar-days" class="calendar-grid compact"></div>
                 </div>
+            </div>
+
+            <div class="card">
+                <h4 style="color:gray; margin-bottom:10px;">🎯 HEDEF YARIŞLARI</h4>
+                <div id="student-races-list"></div>
             </div>
 
             <button onclick="switchView('admin')" class="btn-secondary">🔙 Listeye Dön</button>
@@ -115,6 +128,36 @@
             <input type="text" id="modalRaceCat" placeholder="Kategori" class="input-field">
             <button onclick="saveRaceFromModal()" class="btn-primary">KAYDET</button>
             <button onclick="closeAddModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button>
+        </div>
+    </div>
+
+    <div id="modal-workout-assign" class="modal-overlay">
+        <div class="modal-card" style="border-color:#4a90e2;">
+            <h3 style="color:#4a90e2">🏋️ ANTRENMAN YAZ</h3>
+            <p id="modalWorkoutDateLabel" style="color:gray; font-size:12px; margin-bottom:15px;">...</p>
+            
+            <input type="text" id="workoutTitle" placeholder="Başlık (Örn: Sabah Koşusu)" class="input-field">
+            <textarea id="workoutDesc" placeholder="Detay (Örn: 5K, Nabız 140)" class="input-field" rows="3"></textarea>
+            
+            <button onclick="saveWorkout()" class="btn-primary" style="background:#4a90e2;">GÖNDER</button>
+            <button onclick="closeWorkoutModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button>
+        </div>
+    </div>
+
+    <div id="modal-workout-view" class="modal-overlay">
+        <div class="modal-card" style="border-color:#4a90e2; text-align:left;">
+            <h3 id="viewWorkoutTitle" style="color:#4a90e2; text-align:center;">...</h3>
+            <p id="viewWorkoutDate" style="text-align:center; color:gray; font-size:11px; margin-bottom:15px;">...</p>
+            
+            <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:15px;">
+                <p id="viewWorkoutDesc" style="font-size:13px; line-height:1.4;">...</p>
+            </div>
+
+            <input type="text" id="workoutStravaLink" placeholder="🔗 Strava Linki (Opsiyonel)" class="input-field" style="font-size:11px;">
+
+            <button id="btnCompleteWorkout" onclick="toggleWorkoutStatus()" class="btn-primary" style="background:#333; border:1px solid #555;">☐ TAMAMLA</button>
+            
+            <button onclick="closeWorkoutViewModal()" class="btn-secondary" style="border:none; color:#ff4444; width:100%; text-align:center;">KAPAT</button>
         </div>
     </div>
 
