@@ -24,22 +24,15 @@
 
         <div id="view-discover" class="view">
             <h2 class="page-title">YARIŞ TAKVİMİ</h2>
+            
             <div class="filter-scroll">
                 <button class="filter-pill active">Tümü</button>
                 <button class="filter-pill">42K</button>
                 <button class="filter-pill">21K</button>
             </div>
-            <div class="race-card">
-                <div class="race-date">
-                    <div class="day">05</div>
-                    <div class="month">KAS</div>
+
+            <div id="races-container">
                 </div>
-                <div class="race-info">
-                    <div class="race-name">İstanbul Maratonu</div>
-                    <div class="race-cat">42K • Yol</div>
-                </div>
-                <button class="btn-icon">＋</button>
-            </div>
         </div>
 
         <div id="view-locker" class="view">
@@ -59,10 +52,21 @@
             
             <div class="card">
                 <h3>📢 Yeni Haber Ekle</h3>
-                <input type="text" id="newsTitle" placeholder="Başlık (Örn: Yeni Rekor!)" class="input-field">
-                <input type="text" id="newsTag" placeholder="Etiket (Örn: GÜNCEL)" class="input-field">
-                <textarea id="newsContent" placeholder="Haber içeriği..." class="input-field" rows="3"></textarea>
-                <button onclick="saveNews()" class="btn-primary">YAYINLA</button>
+                <input type="text" id="newsTitle" placeholder="Başlık" class="input-field">
+                <input type="text" id="newsTag" placeholder="Etiket (Örn: DUYURU)" class="input-field">
+                <textarea id="newsContent" placeholder="İçerik..." class="input-field" rows="2"></textarea>
+                <button onclick="saveNews()" class="btn-primary">HABER YAYINLA</button>
+            </div>
+
+            <div class="card" style="border: 1px solid var(--green);">
+                <h3 style="color:var(--green)">🏁 Yeni Yarış Ekle</h3>
+                <input type="text" id="raceName" placeholder="Yarış Adı (Örn: Kapadokya Ultra)" class="input-field">
+                <div style="display:flex; gap:10px;">
+                    <input type="text" id="raceDateDay" placeholder="Gün (05)" class="input-field" style="width:50%">
+                    <input type="text" id="raceDateMonth" placeholder="Ay (EKİM)" class="input-field" style="width:50%">
+                </div>
+                <input type="text" id="raceCat" placeholder="Kategori (Örn: 63K • Trail)" class="input-field">
+                <button onclick="saveRace()" class="btn-primary" style="background-color:var(--green); color:var(--navy)">YARIŞ EKLE</button>
             </div>
 
             <button onclick="switchView('locker')" class="btn-secondary">🔙 Locker'a Dön</button>
