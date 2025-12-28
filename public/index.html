@@ -20,7 +20,6 @@
         <div class="brand-text-logo">
             <span class="symbol">◉</span> CHECKPOINT <span class="accent">COLLECTIVE</span>
         </div>
-        
         <div id="profile-trigger" class="profile-circle" onclick="switchView('locker')">
             <span class="material-icons-round guest-icon">person_outline</span>
         </div>
@@ -53,7 +52,6 @@
                     <span class="day-badge">SEÇİLDİ</span>
                 </div>
                 <div id="selected-day-races"></div>
-                
                 <button id="btnAddRaceToDay" class="btn-primary" style="margin-top:10px; display:none;" onclick="openAddModal()">＋ SİSTEME YARIŞ EKLE</button>
             </div>
         </div>
@@ -64,17 +62,13 @@
                 <h3>Misafir Kullanıcı</h3>
                 <span class="role-badge">Giriş Yapılmadı</span>
             </div>
-
             <div class="login-prompt card">
                 <p>Verilerini görmek için giriş yapmalısın.</p>
                 <button id="btnLogin" class="btn-primary">GOOGLE İLE GİRİŞ YAP</button>
             </div>
-
             <div id="my-races-section" style="display:none;">
                 <h4 style="margin: 20px 0 10px 0; font-size: 14px; color: var(--orange); letter-spacing: 1px;">YARIŞ TAKVİMİM</h4>
-                <div id="my-races-list">
-                    <p style="color:gray; font-size:12px;">Henüz bir hedef yarış eklemedin.</p>
-                </div>
+                <div id="my-races-list"></div>
             </div>
         </div>
 
@@ -92,6 +86,23 @@
                 <div id="user-list-container"><p>Yükleniyor...</p></div>
             </div>
             <button onclick="switchView('locker')" class="btn-secondary">🔙 Dön</button>
+        </div>
+
+        <div id="view-student-detail" class="view">
+            <div class="profile-header">
+                <div id="student-avatar" class="avatar" style="border-color:#4a90e2;"></div>
+                <h3 id="student-name">Öğrenci Adı</h3>
+                <span class="role-badge" style="background:#4a90e2;">ÖĞRENCİ</span>
+            </div>
+
+            <div class="card">
+                <h4 style="color:#4a90e2; margin-bottom:10px;">🎯 HEDEF YARIŞLARI</h4>
+                <div id="student-races-list">
+                    <p>Yükleniyor...</p>
+                </div>
+            </div>
+
+            <button onclick="switchView('admin')" class="btn-secondary">🔙 Listeye Dön</button>
         </div>
 
     </div>
