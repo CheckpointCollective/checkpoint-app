@@ -30,23 +30,15 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 .news-img { width: 50px; height: 50px; background: #333; border-radius: 8px; flex-shrink: 0; }
 .meta { font-size: 11px; color: var(--gray); }
 
-/* YARIŞ */
-.filter-scroll { display: flex; gap: 10px; overflow-x: auto; padding-bottom: 10px; margin-bottom: 15px; }
-.filter-pill { background: var(--navy-light); border: none; color: var(--gray); padding: 8px 16px; border-radius: 20px; font-size: 12px; }
-.filter-pill.active { background: var(--orange); color: white; }
-.race-card { display: flex; justify-content: space-between; align-items: center; }
-.race-date { text-align: center; padding-right: 15px; border-right: 1px solid rgba(255,255,255,0.1); }
-.race-date .day { font-size: 20px; font-weight: bold; color: var(--orange); }
-.race-date .month { font-size: 10px; }
-.race-info { flex: 1; padding-left: 15px; }
-.race-name { font-weight: bold; font-size: 14px; }
-.race-cat { font-size: 11px; color: var(--gray); }
-.btn-icon { background: var(--gray); width: 30px; height: 30px; border-radius: 50%; border: none; color: white; display: flex; align-items: center; justify-content: center; }
-
 /* PROFİL */
 .profile-header { text-align: center; margin-bottom: 30px; }
 .avatar { width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--orange); background-size: cover; background-position: center; }
 .role-badge { background: linear-gradient(90deg, #FFD700, #FFA500); color: black; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 8px; }
+
+/* BUTONLAR & FORMLAR (YENİ) */
+.btn-primary { background: var(--orange); color: white; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
+.btn-secondary { background: transparent; border: 1px solid var(--gray); color: var(--gray); padding: 10px; width: 100%; border-radius: 8px; margin-top: 10px; cursor: pointer; }
+.input-field { width: 100%; padding: 12px; margin: 8px 0 15px 0; border-radius: 8px; border: none; background: #0B132B; color: white; box-sizing: border-box; font-family: 'Inter'; }
 
 /* ALT MENÜ */
 .bottom-nav { position: fixed; bottom: 0; left: 0; width: 100%; height: 70px; background: var(--navy-light); display: flex; justify-content: space-around; align-items: center; border-top: 1px solid rgba(255,255,255,0.05); }
@@ -54,5 +46,3 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 .nav-item.active { opacity: 1; color: var(--orange); transform: translateY(-2px); }
 .nav-item .icon { font-size: 22px; }
 .nav-item span { font-size: 10px; font-weight: bold; }
-
-.btn-primary { background: var(--orange); color: white; border: none; width: 100%; padding: 14px; border-radius: 12px; font-weight: bold; font-size: 14px; cursor: pointer; }
