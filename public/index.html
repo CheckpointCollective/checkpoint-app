@@ -4,10 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
     <title>Checkpoint 360</title>
-    <link rel="icon" href="CP_Logo.png" type="image/png">
-
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Bebas+Neue&display=swap" rel="stylesheet">
-    
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -22,47 +19,35 @@
         <div id="view-feed" class="view active">
             <div class="hero-card">
                 <div class="tag">💡 GÜNÜN İPUCU</div>
-                <h2>DİZ AĞRISI MI? BU 3 HAREKETİ DENE.</h2>
-                <div class="action-link">Detayları Gör ➔</div>
+                <h2>KOŞU SONRASI BUZ MU SICAK MI?</h2>
+                <div class="action-link" onclick="alert('Detaylar yakında...')">Detayları Gör ➔</div>
             </div>
 
             <h4 class="section-title">SON HABERLER</h4>
-            
             <div class="news-card">
-                <div class="news-img"></div>
+                <div class="news-img" style="background-color:#FF6B35"></div>
                 <div class="news-content">
-                    <h4>İstanbul Maratonu Kayıtları</h4>
-                    <span class="meta">2 saat önce • 3 dk okuma</span>
-                </div>
-            </div>
-            
-            <div class="news-card">
-                <div class="news-img"></div>
-                <div class="news-content">
-                    <h4>Karbon Tabanlı Ayakkabılar</h4>
-                    <span class="meta">Dün • 5 dk okuma</span>
+                    <h4>Checkpoint 360 Yayında!</h4>
+                    <span class="meta">Az önce • Sistem Mesajı</span>
                 </div>
             </div>
         </div>
 
         <div id="view-discover" class="view">
             <h2 class="page-title">YARIŞ TAKVİMİ</h2>
-            
             <div class="filter-scroll">
                 <button class="filter-pill active">Tümü</button>
-                <button class="filter-pill">10K</button>
+                <button class="filter-pill">42K</button>
                 <button class="filter-pill">21K</button>
-                <button class="filter-pill">Trail</button>
             </div>
-
             <div class="race-card">
                 <div class="race-date">
                     <div class="day">05</div>
                     <div class="month">KAS</div>
                 </div>
                 <div class="race-info">
-                    <div class="race-name">İstanbul Maratonu 🇹🇷</div>
-                    <div class="race-cat">42K • Yol Koşusu</div>
+                    <div class="race-name">İstanbul Maratonu</div>
+                    <div class="race-cat">42K • Yol</div>
                 </div>
                 <button class="btn-icon">＋</button>
             </div>
@@ -72,11 +57,10 @@
             <div class="profile-header">
                 <div class="avatar"></div>
                 <h3>Misafir Kullanıcı</h3>
-                <span class="role-badge">FREE MEMBER</span>
+                <span class="role-badge">Giriş Yapılmadı</span>
             </div>
-
             <div class="login-prompt card">
-                <p>Verilerini görmek ve antrenman planına ulaşmak için giriş yapmalısın.</p>
+                <p>Verilerini görmek için giriş yapmalısın.</p>
                 <button id="btnLogin" class="btn-primary">GOOGLE İLE GİRİŞ YAP</button>
             </div>
         </div>
@@ -85,25 +69,19 @@
 
     <nav class="bottom-nav">
         <div class="nav-item active" onclick="switchView('feed')">
-            <div class="icon">📰</div>
-            <span>AKIŞ</span>
+            <div class="icon">📰</div><span>AKIŞ</span>
         </div>
         <div class="nav-item" onclick="switchView('discover')">
-            <div class="icon">📅</div>
-            <span>YARIŞLAR</span>
+            <div class="icon">📅</div><span>YARIŞLAR</span>
         </div>
         <div class="nav-item" onclick="switchView('locker')">
-            <div class="icon">👟</div>
-            <span>LOCKER</span>
+            <div class="icon">👟</div><span>LOCKER</span>
         </div>
     </nav>
 
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-app-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-auth-compat.js"></script>
     <script src="https://www.gstatic.com/firebasejs/9.0.0/firebase-firestore-compat.js"></script>
-
-    <script src="config.js"></script>
-
-    <script src="app.js"></script>
+    <script src="config.js"></script> <script src="app.js"></script>
 </body>
 </html>
