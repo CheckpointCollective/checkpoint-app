@@ -38,18 +38,43 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // 3. ARAYÜZ GÜNCELLEME
-function updateUIForUser(user) {
+async function updateUIForUser(user) {
+    // Veritabanından rolünü kontrol et
+    const doc = await db.collection('users').doc(user.uid).get();
+    const role = doc.data().role;
+
+    // Header Rozeti
     document.getElementById('header-status').innerHTML = `<span style="color:var(--orange)">●</span> ${user.displayName.split(' ')[0]}`;
+    
+    // Profil Ekranı
     document.querySelector('.profile-header h3').innerText = user.displayName;
-    document.querySelector('.role-badge').innerText = "MEMBER";
-    
-    // Avatarı güncelle
-    const avatarEl = document.querySelector('.profile-header .avatar');
-    if(avatarEl) avatarEl.style.backgroundImage = `url('${user.photoURL}')`;
-    
+    document.querySelector('.profile-header .avatar').style.backgroundImage = `url('${user.photoURL}')`;
     document.querySelector('.login-prompt').style.display = 'none';
+
+    // ROL GÖSTERGESİ VE ADMİN PANELİ
+    if (role === 'admin') {
+        document.querySelector('.role-badge').innerText = "YÖNETİCİ";
+        document.querySelector('.role-badge').style.background = "linear-gradient(90deg, #FF0000, #990000)";
+        document.querySelector('.role-badge').style.color = "white";
+
+        // Admin Butonu Ekle (Eğer yoksa)
+        if (!document.getElementById('btnAdmin')) {
+            const btn = document.createElement('button');
+            btn.id = 'btnAdmin';
+            btn.innerText = "⚡ YÖNETİCİ PANELİ";
+            btn.className = "btn-primary";
+            btn.style.marginTop = "10px";
+            btn.style.marginBottom = "10px";
+            btn.onclick = () => alert("Panel birazdan açılacak..."); // Şimdilik sadece mesaj
+            
+            // Profil başlığının altına ekle
+            document.querySelector('.profile-header').appendChild(btn);
+        }
+    } else {
+        document.querySelector('.role-badge').innerText = "PREMIUM ÜYE";
+    }
     
-    // Çıkış butonu yoksa ekle
+    // Çıkış Butonu
     if (!document.getElementById('btnLogout')) {
         const btn = document.createElement('button');
         btn.id = 'btnLogout';
@@ -60,6 +85,7 @@ function updateUIForUser(user) {
         btn.onclick = () => auth.signOut();
         document.getElementById('view-locker').appendChild(btn);
     }
+}
 }
 
 function updateUIForGuest() {
