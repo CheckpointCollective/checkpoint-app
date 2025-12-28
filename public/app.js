@@ -1,18 +1,15 @@
 console.log("Checkpoint Collective - Başlatılıyor... 🚀");
 
-// --- SPLASH EKRANI MANTIĞI ---
+// --- SPLASH EKRANI ---
 document.addEventListener('DOMContentLoaded', () => {
-    // 2.5 saniye bekle, sonra gizle
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
         if(splash) {
-            splash.classList.add('hidden'); // CSS ile fade-out yap
-            // Animasyon bitince tamamen kaldır (0.5sn sonra)
+            splash.classList.add('hidden');
             setTimeout(() => splash.remove(), 500);
         }
     }, 2500);
 });
-
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -52,14 +49,14 @@ auth.onAuthStateChanged(async (user) => {
     loadRaces();
 });
 
-// --- UI GÜNCELLEME ---
+// --- UI GÜNCELLEME (HEADER DÜZELTİLDİ) ---
 function updateUIForUser(user, role) {
-    const headerPill = document.getElementById('header-profile-pill');
-    const headerText = document.getElementById('header-status-text');
-    if(headerPill && headerText) {
-        headerText.innerText = user.displayName.split(' ')[0];
-        headerPill.classList.add('logged-in');
-        headerPill.querySelector('.icon').innerText = 'verified_user';
+    // Profil Yuvarlağı Güncellemesi
+    const profileTrigger = document.getElementById('profile-trigger');
+    if(profileTrigger) {
+        profileTrigger.classList.add('active');
+        // İkonu sil, resim koy
+        profileTrigger.innerHTML = `<div class="user-avatar-small" style="background-image:url('${user.photoURL}')"></div>`;
     }
 
     document.querySelector('.profile-header h3').innerText = user.displayName;
@@ -96,12 +93,11 @@ function updateUIForUser(user, role) {
 }
 
 function updateUIForGuest() {
-    const headerPill = document.getElementById('header-profile-pill');
-    const headerText = document.getElementById('header-status-text');
-    if(headerPill && headerText) {
-        headerText.innerText = "Misafir";
-        headerPill.classList.remove('logged-in');
-        headerPill.querySelector('.icon').innerText = 'account_circle';
+    // Profil Yuvarlağı (Misafir)
+    const profileTrigger = document.getElementById('profile-trigger');
+    if(profileTrigger) {
+        profileTrigger.classList.remove('active');
+        profileTrigger.innerHTML = `<span class="material-icons-round guest-icon">person_outline</span>`;
     }
 
     document.querySelector('.profile-header h3').innerText = "Misafir Kullanıcı";
@@ -110,7 +106,7 @@ function updateUIForGuest() {
     if(document.getElementById('btnLogout')) document.getElementById('btnLogout').remove();
 }
 
-// --- DİĞER FONKSİYONLAR (Aynı) ---
+// --- DİĞERLERİ AYNI ---
 function loadUsers() {
     db.collection('users').orderBy('joinedAt', 'desc').onSnapshot(snapshot => {
         let html = '';
@@ -118,22 +114,11 @@ function loadUsers() {
             const u = doc.data();
             const roleClass = u.role === 'admin' ? 'admin' : '';
             const roleText = u.role === 'admin' ? 'YÖNETİCİ' : 'ÖĞRENCİ';
-            html += `
-            <div class="user-row">
-                <div class="user-info">
-                    <div class="user-mini-avatar" style="background-image:url('${u.photo || ''}')"></div>
-                    <div>
-                        <div class="user-name">${u.name}</div>
-                        <div class="user-email">${u.email}</div>
-                    </div>
-                </div>
-                <div class="user-role-tag ${roleClass}">${roleText}</div>
-            </div>`;
+            html += `<div class="user-row"><div class="user-info"><div class="user-mini-avatar" style="background-image:url('${u.photo || ''}')"></div><div><div class="user-name">${u.name}</div><div class="user-email">${u.email}</div></div></div><div class="user-role-tag ${roleClass}">${roleText}</div></div>`;
         });
         document.getElementById('user-list-container').innerHTML = html || '<p>Kullanıcı yok.</p>';
     });
 }
-
 function loadNews() {
     db.collection('news').orderBy('date', 'desc').onSnapshot(snapshot => {
         let html = '';
@@ -144,18 +129,14 @@ function loadNews() {
         document.getElementById('news-container').innerHTML = html || '<p style="text-align:center; color:gray">Haber yok.</p>';
     });
 }
-
 function loadRaces() {
     db.collection('races').onSnapshot(snapshot => {
         allRaces = [];
-        snapshot.forEach(doc => {
-            const raceData = doc.data(); raceData.id = doc.id; allRaces.push(raceData); 
-        });
+        snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; allRaces.push(d); });
         renderCalendar();
         if(selectedFullDate) showDayDetails(selectedFullDate);
     });
 }
-
 function renderCalendar() {
     const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     document.getElementById('currentMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`;

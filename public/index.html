@@ -12,19 +12,19 @@
 
     <div id="splash-screen">
         <div class="splash-content">
-            <img src="alternatif.png" alt="Checkpoint Collective Logo" class="splash-logo-img">
-            <p>Yükleniyor...</p>
+            <img src="alternatif.png" alt="Logo" class="splash-logo-img">
         </div>
     </div>
 
     <div class="app-header">
-        <div class="brand-logo-container">
-            <img src="alternatif.png" alt="Checkpoint Collective Logo" class="header-logo-img">
+        
+        <div class="brand-text-logo">
+            <span class="symbol">◉</span> CHECKPOINT <span class="accent">COLLECTIVE</span>
         </div>
-        <div id="header-profile-pill" class="profile-pill guest">
-            <span class="material-icons-round icon">account_circle</span>
-            <span id="header-status-text">Misafir</span>
-        </div>
+
+        <div id="profile-trigger" class="profile-circle" onclick="switchView('locker')">
+            <span class="material-icons-round guest-icon">person_outline</span>
+            </div>
     </div>
 
     <div id="main-container">
@@ -36,15 +36,19 @@
         </div>
 
         <div id="view-discover" class="view">
-            <div class="calendar-header-card">
-                <button class="nav-arrow" onclick="changeMonth(-1)">❮</button>
-                <h2 id="currentMonthLabel">...</h2>
-                <button class="nav-arrow" onclick="changeMonth(1)">❯</button>
+            <div class="calendar-wrapper">
+                <div class="calendar-header-card">
+                    <button class="nav-arrow" onclick="changeMonth(-1)">❮</button>
+                    <h2 id="currentMonthLabel">...</h2>
+                    <button class="nav-arrow" onclick="changeMonth(1)">❯</button>
+                </div>
+                
+                <div class="calendar-grid-header">
+                    <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
+                </div>
+                
+                <div id="calendar-days" class="calendar-grid compact"></div>
             </div>
-            <div class="calendar-grid-header">
-                <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
-            </div>
-            <div id="calendar-days" class="calendar-grid compact"></div>
             
             <div id="day-details-panel" class="day-details-card" style="display:none;">
                 <div class="details-header">
@@ -52,7 +56,7 @@
                     <span class="day-badge">SEÇİLDİ</span>
                 </div>
                 <div id="selected-day-races"></div>
-                <button id="btnAddRaceToDay" class="btn-primary" style="margin-top:10px; display:none;" onclick="openAddModal()">＋ BU GÜNE YARIŞ EKLE</button>
+                <button id="btnAddRaceToDay" class="btn-primary" style="margin-top:10px; display:none;" onclick="openAddModal()">＋ EKLE</button>
             </div>
         </div>
 
@@ -69,22 +73,21 @@
         </div>
 
         <div id="view-admin" class="view">
-            <h2 class="page-title" style="color:var(--orange)">YÖNETİCİ PANELİ</h2>
+            <h2 class="page-title" style="color:var(--orange)">YÖNETİCİ</h2>
             
             <div class="card">
                 <h3>📢 Haber Ekle</h3>
                 <input type="text" id="newsTitle" placeholder="Başlık" class="input-field">
                 <input type="text" id="newsTag" placeholder="Etiket" class="input-field">
-                <textarea id="newsContent" placeholder="İçerik..." class="input-field" rows="2"></textarea>
-                <button onclick="saveNews()" class="btn-primary">HABER YAYINLA</button>
+                <textarea id="newsContent" placeholder="İçerik" class="input-field" rows="2"></textarea>
+                <button onclick="saveNews()" class="btn-primary">YAYINLA</button>
             </div>
 
             <div class="card" style="border: 1px solid #4a90e2;">
-                <h3 style="color:#4a90e2">👥 Öğrencilerim</h3>
+                <h3 style="color:#4a90e2">👥 Öğrenciler</h3>
                 <div id="user-list-container"><p>Yükleniyor...</p></div>
             </div>
-
-            <button onclick="switchView('locker')" class="btn-secondary">🔙 Locker'a Dön</button>
+            <button onclick="switchView('locker')" class="btn-secondary">🔙 Dön</button>
         </div>
 
     </div>
