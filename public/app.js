@@ -1,4 +1,4 @@
-console.log("Checkpoint 360 - Takvim ve Silme Sistemi 📅🗑️");
+console.log("Checkpoint 360 - Koçluk Sistemi Başlıyor 👥");
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -29,6 +29,11 @@ auth.onAuthStateChanged(async (user) => {
         }
         currentUserRole = doc.data().role || 'free';
         updateUIForUser(user, currentUserRole);
+        
+        // Eğer Adminsen, kullanıcıları da yükle
+        if(currentUserRole === 'admin') {
+            loadUsers();
+        }
     } else {
         currentUserRole = 'free';
         updateUIForGuest();
@@ -38,7 +43,35 @@ auth.onAuthStateChanged(async (user) => {
     loadRaces();
 });
 
-// --- VERİ ÇEKME ---
+// --- YENİ: KULLANICILARI LİSTELE ---
+function loadUsers() {
+    db.collection('users').orderBy('joinedAt', 'desc').onSnapshot(snapshot => {
+        let html = '';
+        snapshot.forEach(doc => {
+            const u = doc.data();
+            // Rol etiketi rengi
+            const roleClass = u.role === 'admin' ? 'admin' : '';
+            const roleText = u.role === 'admin' ? 'YÖNETİCİ' : 'ÖĞRENCİ';
+
+            html += `
+            <div class="user-row">
+                <div class="user-info">
+                    <div class="user-mini-avatar" style="background-image:url('${u.photo || ''}')"></div>
+                    <div>
+                        <div class="user-name">${u.name}</div>
+                        <div class="user-email">${u.email}</div>
+                    </div>
+                </div>
+                <div class="user-role-tag ${roleClass}">${roleText}</div>
+            </div>`;
+        });
+        
+        const container = document.getElementById('user-list-container');
+        if(container) container.innerHTML = html || '<p>Kullanıcı yok.</p>';
+    });
+}
+
+// --- VERİ ÇEKME (HABER & YARIŞ) ---
 function loadNews() {
     db.collection('news').orderBy('date', 'desc').onSnapshot(snapshot => {
         let html = '';
@@ -57,35 +90,31 @@ function loadNews() {
     });
 }
 
-// --- TAKVİM MANTIĞI ---
 function loadRaces() {
     db.collection('races').onSnapshot(snapshot => {
         allRaces = [];
         snapshot.forEach(doc => {
-            // ÖNEMLİ: Artık döküman ID'sini de (doc.id) kaydediyoruz! Silmek için lazım.
             const raceData = doc.data();
             raceData.id = doc.id; 
             allRaces.push(raceData); 
         });
         renderCalendar();
-        // Eğer şu an bir güne bakıyorsan ve o günün verisi değiştiyse, ekranı yenile
         if(selectedFullDate) showDayDetails(selectedFullDate);
     });
 }
 
+// --- TAKVİM FONKSİYONLARI ---
 function renderCalendar() {
     const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
-    document.getElementById('currentMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+    const lbl = document.getElementById('currentMonthLabel');
+    if(lbl) lbl.innerText = `${monthNames[currentMonth]} ${currentYear}`;
     
     const firstDay = new Date(currentYear, currentMonth, 1).getDay();
     const startDay = firstDay === 0 ? 6 : firstDay - 1; 
     const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
     
     let html = '';
-
-    for (let i = 0; i < startDay; i++) {
-        html += `<div class="day-cell empty"></div>`;
-    }
+    for (let i = 0; i < startDay; i++) html += `<div class="day-cell empty"></div>`;
 
     for (let day = 1; day <= daysInMonth; day++) {
         const monthStr = (currentMonth + 1).toString().padStart(2, '0');
@@ -97,24 +126,16 @@ function renderCalendar() {
         const todayClass = (new Date().toISOString().slice(0,10) === fullDate) ? 'today' : '';
         const selectedClass = (selectedFullDate === fullDate) ? 'selected' : '';
 
-        html += `<div class="day-cell ${raceClass} ${todayClass} ${selectedClass}" 
-                      onclick="selectDate('${fullDate}', this)">
-                    ${day}
-                 </div>`;
+        html += `<div class="day-cell ${raceClass} ${todayClass} ${selectedClass}" onclick="selectDate('${fullDate}', this)">${day}</div>`;
     }
-
-    document.getElementById('calendar-days').innerHTML = html;
+    const calDays = document.getElementById('calendar-days');
+    if(calDays) calDays.innerHTML = html;
 }
 
 function changeMonth(direction) {
     currentMonth += direction;
-    if(currentMonth < 0) {
-        currentMonth = 11;
-        currentYear--;
-    } else if (currentMonth > 11) {
-        currentMonth = 0;
-        currentYear++;
-    }
+    if(currentMonth < 0) { currentMonth = 11; currentYear--; } 
+    else if (currentMonth > 11) { currentMonth = 0; currentYear++; }
     renderCalendar();
 }
 
@@ -126,31 +147,25 @@ function selectDate(fullDate, element) {
 }
 
 function showDayDetails(dateStr) {
-    document.getElementById('day-details-panel').style.display = 'block';
+    const pnl = document.getElementById('day-details-panel');
+    if(pnl) pnl.style.display = 'block';
+    
     const [y, m, d] = dateStr.split('-');
     document.getElementById('selectedDateLabel').innerText = `${d}.${m}.${y}`;
 
     const racesThatDay = allRaces.filter(r => r.date === dateStr);
-    
     let html = '';
     if (racesThatDay.length > 0) {
         racesThatDay.forEach(race => {
-            // Eğer Adminsen Çöp Kutusu Görünsün
             let deleteBtn = '';
-            if (currentUserRole === 'admin') {
-                deleteBtn = `<button class="btn-delete" onclick="deleteRace('${race.id}')">🗑️</button>`;
-            }
-
+            if (currentUserRole === 'admin') deleteBtn = `<button class="btn-delete" onclick="deleteRace('${race.id}')">🗑️</button>`;
             html += `
             <div class="race-mini-card">
                 <div style="flex:1;">
                     <div style="font-weight:bold;">${race.name}</div>
                     <div style="font-size:11px; color:gray;">${race.category}</div>
                 </div>
-                <div style="display:flex; align-items:center;">
-                    <span style="font-size:16px;">🏁</span>
-                    ${deleteBtn}
-                </div>
+                <div style="display:flex; align-items:center;"><span style="font-size:16px;">🏁</span>${deleteBtn}</div>
             </div>`;
         });
     } else {
@@ -158,57 +173,42 @@ function showDayDetails(dateStr) {
     }
     document.getElementById('selected-day-races').innerHTML = html;
 
-    if (currentUserRole === 'admin') {
-        document.getElementById('btnAddRaceToDay').style.display = 'block';
-    } else {
-        document.getElementById('btnAddRaceToDay').style.display = 'none';
-    }
+    if (currentUserRole === 'admin') document.getElementById('btnAddRaceToDay').style.display = 'block';
+    else document.getElementById('btnAddRaceToDay').style.display = 'none';
 }
 
-// --- SİLME FONKSİYONU (YENİ) ---
 function deleteRace(raceId) {
-    if(confirm("Bu yarışı silmek istediğine emin misin?")) {
-        db.collection('races').doc(raceId).delete()
-            .then(() => {
-                // Silindiğinde loadRaces içindeki onSnapshot otomatik çalışıp ekranı yenileyecek
-                console.log("Yarış silindi.");
-            })
-            .catch(error => {
-                alert("Silinemedi: " + error.message);
-            });
-    }
+    if(confirm("Silmek istiyor musun?")) db.collection('races').doc(raceId).delete();
 }
 
-// --- YARIŞ EKLEME ---
+// --- MODAL & KAYIT ---
 function openAddModal() {
     if (!selectedFullDate) return;
-    document.getElementById('modalDateLabel').innerText = "Seçilen Tarih: " + selectedFullDate;
+    document.getElementById('modalDateLabel').innerText = selectedFullDate;
     document.getElementById('modal-overlay').style.display = 'flex';
 }
-
 function closeAddModal() {
     document.getElementById('modal-overlay').style.display = 'none';
     document.getElementById('modalRaceName').value = '';
     document.getElementById('modalRaceCat').value = '';
 }
-
 function saveRaceFromModal() {
     const name = document.getElementById('modalRaceName').value;
     const cat = document.getElementById('modalRaceCat').value;
-
-    if (!name) return alert("İsim girmedin!");
-
-    db.collection('races').add({
-        name: name,
-        category: cat,
-        date: selectedFullDate,
-        createdAt: new Date()
-    }).then(() => {
-        closeAddModal();
-    }).catch(e => alert(e.message));
+    if (!name) return alert("İsim giriniz");
+    db.collection('races').add({ name: name, category: cat, date: selectedFullDate, createdAt: new Date() }).then(closeAddModal);
 }
 
-// --- ARAYÜZ GÜNCELLEME ---
+function saveNews() {
+    const title = document.getElementById('newsTitle').value;
+    const tag = document.getElementById('newsTag').value;
+    const content = document.getElementById('newsContent').value;
+    if (!title) return alert("Başlık giriniz");
+    db.collection('news').add({ title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35' })
+        .then(() => { alert("Haber Yayınlandı!"); switchView('feed'); });
+}
+
+// --- GENEL UI ---
 function updateUIForUser(user, role) {
     document.getElementById('header-status').innerHTML = `<span style="color:var(--orange)">●</span> ${user.displayName.split(' ')[0]}`;
     document.querySelector('.profile-header h3').innerText = user.displayName;
@@ -218,7 +218,6 @@ function updateUIForUser(user, role) {
     if (role === 'admin') {
         document.querySelector('.role-badge').innerText = "YÖNETİCİ";
         document.querySelector('.role-badge').style.background = "#D32F2F";
-        
         if (!document.getElementById('btnAdmin')) {
             const btn = document.createElement('button');
             btn.id = 'btnAdmin';
@@ -251,19 +250,6 @@ function updateUIForGuest() {
     document.querySelector('.login-prompt').style.display = 'block';
     if(document.getElementById('btnAdmin')) document.getElementById('btnAdmin').remove();
     if(document.getElementById('btnLogout')) document.getElementById('btnLogout').remove();
-}
-
-function saveNews() {
-    const title = document.getElementById('newsTitle').value;
-    const tag = document.getElementById('newsTag').value;
-    const content = document.getElementById('newsContent').value;
-    if (!title) return alert("Başlık giriniz!");
-    db.collection('news').add({
-        title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35'
-    }).then(() => {
-        alert("Haber Yayınlandı!");
-        switchView('feed');
-    });
 }
 
 function switchView(viewName) {

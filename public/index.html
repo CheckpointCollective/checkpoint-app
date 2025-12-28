@@ -25,26 +25,20 @@
         <div id="view-discover" class="view">
             <div class="calendar-header-card">
                 <button class="nav-arrow" onclick="changeMonth(-1)">❮</button>
-                <h2 id="currentMonthLabel">OCAK 2026</h2>
+                <h2 id="currentMonthLabel">...</h2>
                 <button class="nav-arrow" onclick="changeMonth(1)">❯</button>
             </div>
-
             <div class="calendar-grid-header">
                 <div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div>
             </div>
-            <div id="calendar-days" class="calendar-grid">
-                </div>
-
+            <div id="calendar-days" class="calendar-grid"></div>
+            
             <div id="day-details-panel" class="day-details-card" style="display:none;">
                 <div class="details-header">
-                    <h3 id="selectedDateLabel">15 OCAK</h3>
+                    <h3 id="selectedDateLabel">...</h3>
                     <span class="day-badge">SEÇİLDİ</span>
                 </div>
-                
-                <div id="selected-day-races">
-                    <p style="color:gray; font-size:12px;">Bugün için yarış yok.</p>
-                </div>
-
+                <div id="selected-day-races"></div>
                 <button id="btnAddRaceToDay" class="btn-primary" style="margin-top:10px; display:none;" onclick="openAddModal()">＋ BU GÜNE YARIŞ EKLE</button>
             </div>
         </div>
@@ -63,6 +57,7 @@
 
         <div id="view-admin" class="view">
             <h2 class="page-title" style="color:var(--orange)">YÖNETİCİ PANELİ</h2>
+            
             <div class="card">
                 <h3>📢 Haber Ekle</h3>
                 <input type="text" id="newsTitle" placeholder="Başlık" class="input-field">
@@ -70,6 +65,15 @@
                 <textarea id="newsContent" placeholder="İçerik..." class="input-field" rows="2"></textarea>
                 <button onclick="saveNews()" class="btn-primary">HABER YAYINLA</button>
             </div>
+
+            <div class="card" style="border: 1px solid #4a90e2;">
+                <h3 style="color:#4a90e2">👥 Öğrencilerim</h3>
+                <p style="font-size:11px; color:gray; margin-bottom:10px;">Sisteme kayıtlı kullanıcılar:</p>
+                <div id="user-list-container">
+                    <p>Yükleniyor...</p>
+                </div>
+            </div>
+
             <button onclick="switchView('locker')" class="btn-secondary">🔙 Locker'a Dön</button>
         </div>
 
@@ -78,11 +82,9 @@
     <div id="modal-overlay" class="modal-overlay">
         <div class="modal-card">
             <h3>YARIŞ EKLE</h3>
-            <p id="modalDateLabel" style="color:var(--orange); font-size:12px; margin-bottom:15px;">Tarih: ...</p>
-            
-            <input type="text" id="modalRaceName" placeholder="Yarış Adı (Örn: İznik Ultra)" class="input-field">
-            <input type="text" id="modalRaceCat" placeholder="Kategori (Örn: 160K)" class="input-field">
-            
+            <p id="modalDateLabel" style="color:var(--orange); font-size:12px; margin-bottom:15px;">...</p>
+            <input type="text" id="modalRaceName" placeholder="Yarış Adı" class="input-field">
+            <input type="text" id="modalRaceCat" placeholder="Kategori" class="input-field">
             <button onclick="saveRaceFromModal()" class="btn-primary">KAYDET</button>
             <button onclick="closeAddModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button>
         </div>
