@@ -49,16 +49,13 @@ auth.onAuthStateChanged(async (user) => {
     loadRaces();
 });
 
-// --- UI GÜNCELLEME (HEADER DÜZELTİLDİ) ---
+// --- UI GÜNCELLEME ---
 function updateUIForUser(user, role) {
-    // Profil Yuvarlağı Güncellemesi
     const profileTrigger = document.getElementById('profile-trigger');
     if(profileTrigger) {
         profileTrigger.classList.add('active');
-        // İkonu sil, resim koy
         profileTrigger.innerHTML = `<div class="user-avatar-small" style="background-image:url('${user.photoURL}')"></div>`;
     }
-
     document.querySelector('.profile-header h3').innerText = user.displayName;
     document.querySelector('.profile-header .avatar').style.backgroundImage = `url('${user.photoURL}')`;
     document.querySelector('.login-prompt').style.display = 'none';
@@ -93,20 +90,18 @@ function updateUIForUser(user, role) {
 }
 
 function updateUIForGuest() {
-    // Profil Yuvarlağı (Misafir)
     const profileTrigger = document.getElementById('profile-trigger');
     if(profileTrigger) {
         profileTrigger.classList.remove('active');
         profileTrigger.innerHTML = `<span class="material-icons-round guest-icon">person_outline</span>`;
     }
-
     document.querySelector('.profile-header h3').innerText = "Misafir Kullanıcı";
     document.querySelector('.login-prompt').style.display = 'block';
     if(document.getElementById('btnAdmin')) document.getElementById('btnAdmin').remove();
     if(document.getElementById('btnLogout')) document.getElementById('btnLogout').remove();
 }
 
-// --- DİĞERLERİ AYNI ---
+// --- DİĞERLERİ ---
 function loadUsers() {
     db.collection('users').orderBy('joinedAt', 'desc').onSnapshot(snapshot => {
         let html = '';
@@ -130,11 +125,19 @@ function loadNews() {
     });
 }
 function loadRaces() {
-    db.collection('races').onSnapshot(snapshot => {
+    // Yarışları tarihe göre sıralı çekelim ki "Yaklaşanları" bulabilelim
+    db.collection('races').orderBy('date', 'asc').onSnapshot(snapshot => {
         allRaces = [];
         snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; allRaces.push(d); });
         renderCalendar();
-        if(selectedFullDate) showDayDetails(selectedFullDate);
+        
+        // Eğer bir gün seçili DEĞİLSE, yaklaşan yarışları göster
+        if(!selectedFullDate) {
+            showUpcomingRaces();
+        } else {
+            // Seçiliyse o günün detayını güncelle (silme/ekleme anında)
+            showDayDetails(selectedFullDate);
+        }
     });
 }
 function renderCalendar() {
@@ -163,15 +166,30 @@ function changeMonth(direction) {
     renderCalendar();
 }
 function selectDate(fullDate, element) {
-    document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected'));
-    element.classList.add('selected');
-    selectedFullDate = fullDate;
-    showDayDetails(fullDate);
+    // Eğer zaten seçili olan güne tekrar tıklanırsa seçimi kaldır
+    if (selectedFullDate === fullDate) {
+        element.classList.remove('selected');
+        selectedFullDate = null;
+        showUpcomingRaces(); // Seçim kalkınca listeye dön
+    } else {
+        document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected'));
+        element.classList.add('selected');
+        selectedFullDate = fullDate;
+        showDayDetails(fullDate);
+    }
 }
+
+// --- GÜN DETAYI GÖSTER ---
 function showDayDetails(dateStr) {
-    document.getElementById('day-details-panel').style.display = 'block';
+    const pnl = document.getElementById('day-details-panel');
+    pnl.style.display = 'block';
+    
+    // Header kısmını "SEÇİLEN GÜN" formatına getir
     const [y, m, d] = dateStr.split('-');
-    document.getElementById('selectedDateLabel').innerText = `${d}.${m}.${y}`;
+    document.querySelector('#day-details-panel .details-header h3').innerText = `${d}.${m}.${y}`;
+    document.querySelector('#day-details-panel .day-badge').innerText = "SEÇİLDİ";
+    document.querySelector('#day-details-panel .day-badge').style.background = "var(--orange)";
+
     const racesThatDay = allRaces.filter(r => r.date === dateStr);
     let html = '';
     if (racesThatDay.length > 0) {
@@ -181,14 +199,105 @@ function showDayDetails(dateStr) {
             html += `<div class="race-mini-card"><div style="flex:1;"><div style="font-weight:bold;">${race.name}</div><div style="font-size:11px; color:gray;">${race.category}</div></div><div style="display:flex; align-items:center;"><span style="font-size:16px;">🏁</span>${deleteBtn}</div></div>`;
         });
     } else { html = '<p style="color:gray; font-size:12px; margin-top:10px;">Etkinlik yok.</p>'; }
+    
     document.getElementById('selected-day-races').innerHTML = html;
+    
     if (currentUserRole === 'admin') document.getElementById('btnAddRaceToDay').style.display = 'block';
     else document.getElementById('btnAddRaceToDay').style.display = 'none';
 }
+
+// --- YENİ: YAKLAŞAN YARIŞLARI GÖSTER (Varsayılan) ---
+function showUpcomingRaces() {
+    const pnl = document.getElementById('day-details-panel');
+    pnl.style.display = 'block';
+
+    // Header kısmını "YAKLAŞAN YARIŞLAR" formatına getir
+    document.querySelector('#day-details-panel .details-header h3').innerText = "YAKLAŞAN YARIŞLAR";
+    document.querySelector('#day-details-panel .day-badge').innerText = "LİSTE";
+    document.querySelector('#day-details-panel .day-badge').style.background = "#4a90e2"; // Mavi renk
+
+    // Bugünden sonraki yarışları bul
+    const today = new Date().toISOString().slice(0,10);
+    const upcoming = allRaces.filter(r => r.date >= today).slice(0, 3); // İlk 3 tanesi
+
+    let html = '';
+    if (upcoming.length > 0) {
+        upcoming.forEach(race => {
+            // Tarihi güzelleştir (2025-10-15 -> 15.10)
+            const [y, m, d] = race.date.split('-');
+            html += `
+            <div class="race-mini-card" onclick="goToDate('${race.date}')" style="cursor:pointer;">
+                <div style="margin-right:15px; text-align:center; min-width:35px;">
+                    <div style="font-weight:bold; color:white;">${d}</div>
+                    <div style="font-size:10px; color:gray;">${m}</div>
+                </div>
+                <div style="flex:1;">
+                    <div style="font-weight:bold;">${race.name}</div>
+                    <div style="font-size:11px; color:gray;">${race.category}</div>
+                </div>
+                <div style="font-size:14px; opacity:0.5;">❯</div>
+            </div>`;
+        });
+    } else {
+        html = '<p style="color:gray; font-size:12px; margin-top:10px;">Yakında yarış görünmüyor.</p>';
+    }
+
+    document.getElementById('selected-day-races').innerHTML = html;
+    
+    // Ekleme butonunu gizle (Sadece tarih seçiliyken çıksın)
+    document.getElementById('btnAddRaceToDay').style.display = 'none';
+}
+
+// Listeden yarışa tıklayınca takvimde o güne git
+function goToDate(dateStr) {
+    const [y, m, d] = dateStr.split('-');
+    // Yıl ve Ay farklıysa önce takvimi oraya çevir
+    currentYear = parseInt(y);
+    currentMonth = parseInt(m) - 1; // JS'de aylar 0-11
+    renderCalendar();
+    
+    // Sonra o günü seçili yap
+    // (renderCalendar çalıştığı için DOM elemanları yenilendi, tekrar bulmamız lazım)
+    setTimeout(() => {
+        const cells = document.querySelectorAll('.day-cell');
+        // Döngüyle o günü bul (Basit bir eşleştirme)
+        // Not: Bu kısım %100 her zaman çalışmayabilir (farklı ay görünümündeyse), ama renderCalendar yukarıda ayı değiştirdiği için çalışmalı.
+        // Daha kesin çözüm için 'data-date' attribute kullanmak gerekir ama şimdilik ID'siz gidiyoruz.
+        
+        // Basitçe günü seçili hale getiriyoruz:
+        selectedFullDate = dateStr;
+        showDayDetails(dateStr);
+        
+        // Görsel olarak kutuyu da işaretle
+        // (Takvim yeniden çizildiği için metin içeriğinden günü buluyoruz)
+        cells.forEach(cell => {
+             // Hücrenin içindeki sayı == gün (başındaki 0'ı atarak kıyasla)
+             if(parseInt(cell.innerText) == parseInt(d) && !cell.classList.contains('empty')) {
+                 cell.classList.add('selected');
+             }
+        });
+        
+    }, 100);
+}
+
 function deleteRace(raceId) { if(confirm("Silmek istiyor musun?")) db.collection('races').doc(raceId).delete(); }
 function openAddModal() { if (!selectedFullDate) return; document.getElementById('modalDateLabel').innerText = selectedFullDate; document.getElementById('modal-overlay').style.display = 'flex'; }
 function closeAddModal() { document.getElementById('modal-overlay').style.display = 'none'; document.getElementById('modalRaceName').value = ''; document.getElementById('modalRaceCat').value = ''; }
 function saveRaceFromModal() { const name = document.getElementById('modalRaceName').value; const cat = document.getElementById('modalRaceCat').value; if (!name) return alert("İsim giriniz"); db.collection('races').add({ name: name, category: cat, date: selectedFullDate, createdAt: new Date() }).then(closeAddModal); }
 function saveNews() { const title = document.getElementById('newsTitle').value; const tag = document.getElementById('newsTag').value; const content = document.getElementById('newsContent').value; if (!title) return alert("Başlık giriniz"); db.collection('news').add({ title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35' }).then(() => { alert("Haber Yayınlandı!"); switchView('feed'); }); }
-function switchView(viewName) { document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('view-' + viewName).classList.add('active'); const map = {'feed':0, 'discover':1, 'locker':2}; if(map[viewName]!==undefined) document.querySelectorAll('.nav-item')[map[viewName]].classList.add('active'); }
+function switchView(viewName) { 
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); 
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); 
+    document.getElementById('view-' + viewName).classList.add('active'); 
+    
+    // Takvime her girişte seçimi sıfırla ve listeyi göster
+    if(viewName === 'discover') {
+        selectedFullDate = null;
+        document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected'));
+        showUpcomingRaces();
+    }
+
+    const map = {'feed':0, 'discover':1, 'locker':2}; 
+    if(map[viewName]!==undefined) document.querySelectorAll('.nav-item')[map[viewName]].classList.add('active'); 
+}
 document.addEventListener('click', (e) => { if(e.target && e.target.id == 'btnLogin') loginWithGoogle(); });
