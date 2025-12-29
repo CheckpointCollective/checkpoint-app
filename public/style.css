@@ -107,3 +107,29 @@ h1, h2, h3, h4 { margin: 0; font-weight: 800; }
 .profile-header { text-align: center; margin-bottom: 30px; }
 .avatar { width: 80px; height: 80px; background: #ddd; border-radius: 50%; margin: 0 auto 10px; border: 3px solid var(--orange); background-size: cover; background-position: center; }
 .role-badge { background: linear-gradient(90deg, #FFD700, #FFA500); color: black; font-size: 10px; font-weight: bold; padding: 4px 10px; border-radius: 8px; }
+/* ... Diğerleri aynı ... */
+
+/* YENİ: ADMİN AKSİYON BUTONLARI */
+.btn-icon-action {
+    width: 30px; height: 30px;
+    border-radius: 6px;
+    border: none;
+    cursor: pointer;
+    font-size: 14px;
+    display: flex; align-items: center; justify-content: center;
+    transition: 0.2s;
+}
+.btn-icon-action.edit {
+    background: rgba(255, 215, 0, 0.2);
+    color: var(--gold);
+}
+.btn-icon-action.delete {
+    background: rgba(255, 68, 68, 0.2);
+    color: var(--red);
+}
+.btn-icon-action:hover {
+    transform: scale(1.1);
+    opacity: 0.8;
+}
+
+/* ... Diğerleri aynı ... */

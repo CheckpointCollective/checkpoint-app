@@ -78,8 +78,15 @@
 
     <div id="modal-workout-view" class="modal-overlay">
         <div class="modal-card" style="border-color:#4a90e2; text-align:left; max-height:80vh; overflow-y:auto;">
-            <h3 id="viewWorkoutTitle" style="color:#4a90e2; text-align:center;">...</h3>
-            <p id="viewWorkoutDate" style="text-align:center; color:gray; font-size:11px; margin-bottom:15px;">...</p>
+            <div style="display:flex; justify-content:space-between; align-items:flex-start;">
+                <h3 id="viewWorkoutTitle" style="color:#4a90e2; margin-top:0;">...</h3>
+                <div id="admin-workout-actions" style="display:none; gap:5px;">
+                    <button onclick="editWorkout()" class="btn-icon-action edit" title="Düzenle">✏️</button>
+                    <button onclick="deleteWorkout()" class="btn-icon-action delete" title="Sil">🗑️</button>
+                </div>
+            </div>
+            
+            <p id="viewWorkoutDate" style="color:gray; font-size:11px; margin-bottom:15px;">...</p>
             
             <div style="background:rgba(255,255,255,0.05); padding:10px; border-radius:8px; margin-bottom:15px;">
                 <p id="viewWorkoutDesc" style="font-size:13px; line-height:1.4;">...</p>
@@ -97,31 +104,21 @@
 
             <div id="workout-report-form" style="display:none;">
                 <p style="font-size:12px; color:gray; margin-bottom:5px;">Antrenman nasıl geçti?</p>
-                
                 <div class="rpe-container">
                     <div class="rpe-label">Zorluk (1-10): <span id="rpeValueDisplay" style="color:white; font-weight:bold;">Seçilmedi</span></div>
                     <div class="rpe-grid">
-                        <div class="rpe-box easy" onclick="selectRpe(1)">1</div>
-                        <div class="rpe-box easy" onclick="selectRpe(2)">2</div>
-                        <div class="rpe-box easy" onclick="selectRpe(3)">3</div>
-                        <div class="rpe-box medium" onclick="selectRpe(4)">4</div>
-                        <div class="rpe-box medium" onclick="selectRpe(5)">5</div>
-                        <div class="rpe-box medium" onclick="selectRpe(6)">6</div>
-                        <div class="rpe-box hard" onclick="selectRpe(7)">7</div>
-                        <div class="rpe-box hard" onclick="selectRpe(8)">8</div>
-                        <div class="rpe-box hard" onclick="selectRpe(9)">9</div>
+                        <div class="rpe-box easy" onclick="selectRpe(1)">1</div><div class="rpe-box easy" onclick="selectRpe(2)">2</div><div class="rpe-box easy" onclick="selectRpe(3)">3</div>
+                        <div class="rpe-box medium" onclick="selectRpe(4)">4</div><div class="rpe-box medium" onclick="selectRpe(5)">5</div><div class="rpe-box medium" onclick="selectRpe(6)">6</div>
+                        <div class="rpe-box hard" onclick="selectRpe(7)">7</div><div class="rpe-box hard" onclick="selectRpe(8)">8</div><div class="rpe-box hard" onclick="selectRpe(9)">9</div>
                         <div class="rpe-box max" onclick="selectRpe(10)">10</div>
                     </div>
                 </div>
-
-                <textarea id="reportNote" placeholder="Kısa notun var mı? (Örn: Bacağım iyiydi)" class="input-field" rows="2"></textarea>
+                <textarea id="reportNote" placeholder="Kısa notun var mı?" class="input-field" rows="2"></textarea>
                 <input type="text" id="reportStrava" placeholder="🔗 Strava Linki (Opsiyonel)" class="input-field">
-                
                 <button onclick="submitWorkoutReport()" class="btn-primary" style="background:var(--green); color:black;">KAYDET VE BİTİR</button>
             </div>
 
             <button id="btnOpenReportForm" onclick="showReportForm()" class="btn-primary" style="background:#333; border:1px solid #555;">☐ TAMAMLA</button>
-            
             <button onclick="closeWorkoutViewModal()" class="btn-secondary" style="border:none; color:#ff4444; width:100%; text-align:center;">KAPAT</button>
         </div>
     </div>
