@@ -6,6 +6,7 @@
     <title>Checkpoint Collective</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;800&family=Bebas+Neue&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/icon?family=Material+Icons+Round" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
@@ -49,6 +50,20 @@
 
         <div id="view-locker" class="view">
             <div class="profile-header"><div class="avatar"></div><h3>Misafir Kullanıcı</h3><span class="role-badge">Giriş Yapılmadı</span></div>
+            
+            <div id="my-stats-section" style="display:none;">
+                <div class="charts-row">
+                    <div class="chart-card half">
+                        <h4>🔥 RPE Trendi</h4>
+                        <canvas id="myRpeChart"></canvas>
+                    </div>
+                    <div class="chart-card half">
+                        <h4>🍩 Sadakat</h4>
+                        <canvas id="myConsistencyChart"></canvas>
+                    </div>
+                </div>
+            </div>
+
             <div class="login-prompt card"><p>Verilerini görmek için giriş yapmalısın.</p><button id="btnLogin" class="btn-primary">GOOGLE İLE GİRİŞ YAP</button></div>
             <div id="my-races-section" style="display:none;"><h4 style="margin: 20px 0 10px 0; font-size: 14px; color: var(--orange); letter-spacing: 1px;">YARIŞ TAKVİMİM</h4><div id="my-races-list"></div></div>
         </div>
@@ -63,6 +78,18 @@
 
         <div id="view-student-detail" class="view">
             <div class="profile-header"><div id="student-avatar" class="avatar" style="border-color:#4a90e2;"></div><h3 id="student-name">Öğrenci Adı</h3><span class="role-badge" style="background:#4a90e2;">ÖĞRENCİ</span></div>
+            
+            <div class="charts-row">
+                <div class="chart-card half" style="border-color:#4a90e2;">
+                    <h4 style="color:#4a90e2;">🔥 RPE Trendi</h4>
+                    <canvas id="studentRpeChart"></canvas>
+                </div>
+                <div class="chart-card half" style="border-color:#4a90e2;">
+                    <h4 style="color:#4a90e2;">🍩 Sadakat</h4>
+                    <canvas id="studentConsistencyChart"></canvas>
+                </div>
+            </div>
+
             <div class="card"><h4 style="color:#4a90e2; margin-bottom:10px;">🗓️ ANTRENMAN PROGRAMI</h4><div class="calendar-wrapper"><div class="calendar-header-card"><button class="nav-arrow" onclick="changeStudentMonth(-1)">❮</button><h2 id="studentMonthLabel">...</h2><button class="nav-arrow" onclick="changeStudentMonth(1)">❯</button></div><div class="calendar-grid-header"><div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div></div><div id="student-calendar-days" class="calendar-grid compact"></div></div></div>
             <div class="card"><h4 style="color:gray; margin-bottom:10px;">🎯 HEDEF YARIŞLARI</h4><div id="student-races-list"></div></div>
             <button onclick="switchView('admin')" class="btn-secondary">🔙 Listeye Dön</button>
@@ -77,19 +104,15 @@
         <div class="modal-card" style="border-color:#4a90e2;">
             <h3 style="color:#4a90e2">🏋️ ANTRENMAN YAZ</h3>
             <p id="modalWorkoutDateLabel" style="color:gray; font-size:12px; margin-bottom:10px;">...</p>
-            
             <select id="templateSelector" class="input-field" onchange="loadTemplateToInputs()" style="margin-bottom:10px; color:#4a90e2; font-weight:bold;">
                 <option value="">📂 Şablondan Yükle...</option>
-                </select>
-
+            </select>
             <input type="text" id="workoutTitle" placeholder="Başlık (Örn: Sabah Koşusu)" class="input-field">
             <textarea id="workoutDesc" placeholder="Detay (Örn: 5K, Nabız 140)" class="input-field" rows="3"></textarea>
-            
             <div style="display:flex; align-items:center; margin-bottom:15px; justify-content:flex-start;">
                 <input type="checkbox" id="saveAsTemplate" style="margin-right:8px; width:16px; height:16px;">
                 <label for="saveAsTemplate" style="font-size:12px; color:gray;">Kütüphaneye şablon olarak kaydet</label>
             </div>
-
             <button onclick="saveWorkout()" class="btn-primary" style="background:#4a90e2;">GÖNDER</button>
             <button onclick="closeWorkoutModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button>
         </div>
