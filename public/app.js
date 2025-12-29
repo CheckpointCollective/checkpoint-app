@@ -1,21 +1,12 @@
-console.log("Checkpoint Collective - Final Sürüm (v4.4 - Genişletilmiş) 🚀");
+console.log("Checkpoint Collective - Final Tam Sürüm (v4.5 - Full) 🚀");
 
 // ==========================================
 // 1. BAŞLANGIÇ VE AYARLAR
 // ==========================================
 
-document.addEventListener('DOMContentLoaded', () => {
-    // Splash Screen (Açılış Animasyonu)
-    setTimeout(() => {
-        const splash = document.getElementById('splash-screen');
-        if (splash) {
-            splash.classList.add('hidden');
-            setTimeout(() => splash.remove(), 500);
-        }
-    }, 2500);
-});
+// NOT: Splash Screen (Logo) zamanlayıcısı iptal edildi.
+// Logo artık Firebase verisi yüklenip sayfa hazır olunca kaldırılacak (Bkz: Bölüm 2)
 
-// Firebase Başlatma
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -48,8 +39,17 @@ let openWorkoutId = null;
 let chartInstances = {};
 
 // ==========================================
-// 2. GİRİŞ VE YÖNLENDİRME (LANDING LOGIC)
+// 2. GİRİŞ VE YÖNLENDİRME (DÜZELTİLMİŞ LOGIC)
 // ==========================================
+
+// Yardımcı: Logoyu ekrandan kaldır
+function hideSplashScreen() {
+    const splash = document.getElementById('splash-screen');
+    if (splash && !splash.classList.contains('hidden')) {
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 500);
+    }
+}
 
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
@@ -57,7 +57,6 @@ function loginWithGoogle() {
 }
 
 function enterAsGuest() {
-    // Misafir girişinde direkt içeri al
     switchView('feed');
 }
 
@@ -67,7 +66,6 @@ auth.onAuthStateChanged(async (user) => {
         // --- KULLANICI GİRİŞ YAPMIŞ ---
         currentUserId = user.uid;
         
-        // Veritabanı Kontrolü / Kayıt
         const userRef = db.collection('users').doc(user.uid);
         try {
             const doc = await userRef.get();
@@ -83,22 +81,19 @@ auth.onAuthStateChanged(async (user) => {
             currentUserRole = doc.data() ? doc.data().role : 'free';
         } catch (e) { console.error(e); }
         
-        // Arayüzü Güncelle
         updateUIForUser(user, currentUserRole);
-        
-        // Verileri Yükle
         loadMyRaces(); 
         loadMyWorkouts(currentUserId); 
         
-        // Admin ise ekstra verileri yükle
         if (currentUserRole === 'admin') { 
             loadUsers(); 
             loadAdminDashboard(); 
             loadTemplates(); 
         }
         
-        // Giriş yapılıysa Landing'i gösterme, direkt akışa git
+        // Önce sayfayı aç, sonra logoyu kaldır (Beyaz ekranı önler)
         switchView('feed');
+        hideSplashScreen();
 
     } else {
         // --- ÇIKIŞ YAPILMIŞ / MİSAFİR ---
@@ -113,8 +108,9 @@ auth.onAuthStateChanged(async (user) => {
         
         updateUIForGuest();
         
-        // Giriş yoksa Landing Page'de bekle
+        // Landing sayfasını aç, sonra logoyu kaldır
         switchView('landing');
+        hideSplashScreen();
     }
     
     // Herkesin görebileceği veriler
@@ -134,7 +130,7 @@ function switchView(viewName) {
     const target = document.getElementById('view-' + viewName);
     if(target) target.classList.add('active');
 
-    // 4. LANDING SAYFASI KONTROLÜ (Header ve Footer Gizle/Göster)
+    // 4. Header ve Footer Kontrolü (Landing'de gizle)
     const header = document.getElementById('main-header');
     const bottomNav = document.getElementById('bottom-nav-bar');
 
@@ -163,7 +159,7 @@ function switchView(viewName) {
 }
 
 // ==========================================
-// 3. SMART FEED (SAYAÇ YOK, MOTİVASYON VAR)
+// 3. SMART FEED (SAYAÇ YOK, INSTAGRAM & MOTİVASYON VAR)
 // ==========================================
 
 function updateFeedHeader() {
@@ -174,23 +170,27 @@ function updateFeedHeader() {
     else if(hour < 18) greet = "Tünaydın";
     else greet = "İyi Akşamlar";
     
-    // Kullanıcı adı
     let name = "Misafir";
-    if(auth.currentUser) name = auth.currentUser.displayName.split(' ')[0]; // Sadece ilk isim
+    if(auth.currentUser) name = auth.currentUser.displayName.split(' ')[0];
     
-    document.getElementById('greet-msg').innerText = `${greet}, ${name}!`;
+    // Element varsa güncelle
+    const greetMsg = document.getElementById('greet-msg');
+    const greetStat = document.getElementById('greet-stat');
 
-    // 2. Motivasyon Mesajı (Rastgele)
-    const msgs = [
-        "Bugün kendin için bir şey yap.", 
-        "Adım adım hedefe.", 
-        "Koşu senin özgürlüğün.", 
-        "Hareket et, iyi hisset.",
-        "İyi antrenmanlar!",
-        "Bugün harika bir gün."
-    ];
-    const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
-    document.getElementById('greet-stat').innerText = randomMsg;
+    if(greetMsg) greetMsg.innerText = `${greet}, ${name}!`;
+    
+    if(greetStat) {
+        const msgs = [
+            "Bugün kendin için bir şey yap.", 
+            "Adım adım hedefe.", 
+            "Koşu senin özgürlüğün.", 
+            "Hareket et, iyi hisset.",
+            "İyi antrenmanlar!",
+            "Bugün harika bir gün."
+        ];
+        const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+        greetStat.innerText = randomMsg;
+    }
 }
 
 function loadNews() {
@@ -199,18 +199,18 @@ function loadNews() {
         snapshot.forEach(doc => {
             const data = doc.data();
             
-            // YOUTUBE KONTROLÜ
+            // YOUTUBE VİDEO KONTROLÜ
             let contentHtml = `<p>${data.content}</p>`;
             // Basit Regex: Youtube linki var mı?
             const ytMatch = data.content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/);
             
             if(ytMatch) {
-                // Video ID'sini al
                 let videoId = ytMatch[1];
-                if(videoId.includes('&')) videoId = videoId.split('&')[0]; // Ek parametreleri temizle
+                if(videoId.includes('&')) videoId = videoId.split('&')[0];
                 
                 contentHtml = `
-                    <p>${data.content.replace(ytMatch[0], '')}</p> <div class="video-wrapper">
+                    <p>${data.content.replace(ytMatch[0], '')}</p> 
+                    <div class="video-wrapper">
                         <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
                     </div>
                 `;
@@ -267,20 +267,18 @@ function calculateHR() {
 // 5. GRAFİK SİSTEMİ (AKILLI HACİM DAHİL)
 // ==========================================
 
-// Başlıktan (Örn: "10K Koşu") mesafeyi okuyan fonksiyon
 function calculateVolumeFromTitle(title) {
     if(!title) return 0;
     const match = title.match(/(\d+(?:\.\d+)?)\s*(k|km|m)/i);
     if (match) {
         let val = parseFloat(match[1]);
-        if (match[2].toLowerCase() === 'm') val = val / 1000; // Metreyi km yap
+        if (match[2].toLowerCase() === 'm') val = val / 1000;
         return val;
     }
     return 0;
 }
 
 function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
-    // Sadece tamamlananlar ve tarihe göre sıralı
     const completedWorkouts = workouts.filter(w => w.isCompleted).sort((a, b) => a.date.localeCompare(b.date)).slice(-10);
     
     const rpeLabels = completedWorkouts.map(w => w.date.slice(5));
@@ -292,7 +290,7 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
     
     const volumeData = completedWorkouts.map(w => calculateVolumeFromTitle(w.title));
 
-    // CHART 1: EFOR EĞRİSİ (RPE)
+    // CHART 1: EFOR
     const ctxRpe = document.getElementById(canvasRpeId);
     if (ctxRpe) {
         if (chartInstances[canvasRpeId]) chartInstances[canvasRpeId].destroy();
@@ -303,7 +301,7 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
         });
     }
 
-    // CHART 2: DEVAMLILIK (PIE)
+    // CHART 2: DEVAMLILIK
     const ctxPie = document.getElementById(canvasPieId);
     if (ctxPie) {
         if (chartInstances[canvasPieId]) chartInstances[canvasPieId].destroy();
@@ -314,7 +312,7 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
         });
     }
 
-    // CHART 3: HACİM (VOLUME)
+    // CHART 3: HACİM
     if(canvasVolId) {
         const ctxVol = document.getElementById(canvasVolId);
         if (ctxVol) {
@@ -339,9 +337,7 @@ function loadMyWorkouts(userId) {
             snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; myWorkouts.push(d); });
             renderCalendar(); 
             if (selectedFullDate) showDayDetails(selectedFullDate); 
-            // Grafikleri çiz
             renderCharts('myRpeChart', 'myConsistencyChart', myWorkouts, 'myVolumeChart');
-            // Header güncelle (Günaydın vs.)
             updateFeedHeader();
         }
         if (activeStudentId === userId) renderStudentCalendar(); 
@@ -364,27 +360,24 @@ function loadTemplateToInputs() {
     if (template) { document.getElementById('workoutTitle').value = template.title; document.getElementById('workoutDesc').value = template.desc; }
 }
 
-// --- ANTRENMAN MODAL & İZİNLER ---
 function openWorkoutAssignModal(dateStr) {
     editingWorkoutId = null; 
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr; document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr;
     document.getElementById('workoutTitle').value = ''; document.getElementById('workoutDesc').value = '';
     document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ";
     
-    // YETKİ KONTROLÜ (Free vs Admin)
+    // YETKİ KONTROLÜ
     const chk = document.getElementById('saveAsTemplate');
     const selectBox = document.getElementById('templateSelector');
     
     if (currentUserRole === 'admin') {
-        // ADMIN: Şablonları görür, kullanır
         if (chk) chk.parentElement.style.display = 'flex';
         if (selectBox) selectBox.style.display = 'block';
         chk.checked = false;
     } else {
-        // FREE: Şablonları göremez, sadece kendine yazar
         if (chk) chk.parentElement.style.display = 'none';
         if (selectBox) selectBox.style.display = 'none';
-        activeStudentId = currentUserId; // Hedef mecburen kendisi
+        activeStudentId = currentUserId;
     }
 
     if (selectBox) selectBox.value = "";
@@ -393,7 +386,6 @@ function openWorkoutAssignModal(dateStr) {
 
 function editWorkout() {
     if (!activeStudentId && !openWorkoutId) return; 
-    // Free kullanıcı kendi antrenmanını düzenliyorsa hedefi set et
     if(currentUserRole !== 'admin' && !activeStudentId) activeStudentId = currentUserId;
 
     const currentTitle = document.getElementById('viewWorkoutTitle').innerText; 
@@ -407,7 +399,6 @@ function editWorkout() {
     document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE";
     editingWorkoutId = openWorkoutId;
     
-    // Düzenlerken şablon kaydetmeyi gizle
     const chk = document.getElementById('saveAsTemplate'); if (chk) chk.parentElement.style.display = 'none';
     const selectBox = document.getElementById('templateSelector'); if (selectBox) selectBox.style.display = 'none';
     
@@ -418,7 +409,6 @@ function closeWorkoutModal() { document.getElementById('modal-workout-assign').s
 
 function saveWorkout() {
     let targetId = activeStudentId;
-    // Free ise hedef kendisi
     if(currentUserRole !== 'admin') targetId = currentUserId;
     if (!targetId) return;
 
@@ -432,7 +422,6 @@ function saveWorkout() {
         workoutRef.doc(editingWorkoutId).update({ title: title, desc: desc }).then(() => { closeWorkoutModal(); });
     } else {
         workoutRef.add({ date: dateStr, title: title, desc: desc, isCompleted: false, stravaLink: "", assignedBy: currentUserId, createdAt: new Date(), reportRpe: 0, reportNote: "" }).then(() => {
-            // Sadece Admin şablon kaydedebilir
             if (saveAsTemplate && currentUserRole === 'admin') { db.collection('templates').add({ title: title, desc: desc, createdAt: new Date() }); }
             closeWorkoutModal(); alert("Antrenman Eklendi! 📨");
         });
@@ -451,7 +440,6 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
     document.getElementById('viewWorkoutTitle').innerText = title; document.getElementById('viewWorkoutDate').innerText = date; document.getElementById('viewWorkoutDesc').innerText = desc;
     
     const adminActions = document.getElementById('admin-workout-actions'); 
-    // Adminse veya kendi antrenmanımsa silme/düzenleme butonlarını gör
     if (currentUserRole === 'admin' || ownerId === currentUserId || (!ownerId && currentUserRole!=='admin')) { 
         adminActions.style.display = 'flex'; 
     } else { 
@@ -491,7 +479,6 @@ async function loadAdminDashboard() {
     const todayStr = today.toISOString().slice(0, 10); const yesterdayStr = yesterday.toISOString().slice(0, 10);
     let html = `<div class="dashboard-summary-card"><div class="dashboard-header">GÜNLÜK ÖZET</div>`; let hasAlerts = false;
     
-    // Realtime listener for users
     db.collection('users').where('role', '!=', 'admin').onSnapshot(snap => {
         let promises = snap.docs.map(async (userDoc) => {
             const userData = userDoc.data(); const uid = userDoc.id;
@@ -518,13 +505,11 @@ async function openStudentDetail(targetUserId, dateToFocus) {
     const userDoc = await db.collection('users').doc(targetUserId).get(); const userData = userDoc.data();
     document.getElementById('student-name').innerText = userData.name; document.getElementById('student-avatar').style.backgroundImage = `url('${userData.photo}')`;
     
-    // Hedef Yarışları Çek
     db.collection('users').doc(targetUserId).collection('my_races').orderBy('date', 'asc').get().then(snap => { 
         let l=''; snap.forEach(d=>{const r=d.data();const [y,m,x]=r.date.split('-');l+=`<div class="my-race-item" style="border-left-color:#4a90e2;"><div class="my-race-date"><div class="my-race-day" style="color:#4a90e2;">${x}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${r.name}</div><div style="font-size:11px; color:#888;">${r.category}</div></div></div>`;}); 
         document.getElementById('student-races-list').innerHTML = l || '<p style="font-size:12px;color:gray;">Hedef yok.</p>';
     });
     
-    // Antrenmanları ve Grafikleri Çek
     db.collection('users').doc(targetUserId).collection('workouts').get().then(snap => {
         const studentWorkouts = []; snap.forEach(d => { const dd = d.data(); dd.id = d.id; studentWorkouts.push(dd); });
         renderStudentCalendarWithData(studentWorkouts);
@@ -580,11 +565,8 @@ function loadMyRaces() {
         myRaces = []; let h = '';
         snap.forEach(d => {
             const dat = d.data(); myRaces.push({ id: d.id, date: dat.date, raceId: dat.raceId }); const [y, m, da] = dat.date.split('-');
-            
-            // Yarış ikonunu bul
             const mainRace = allRaces.find(r => r.id === dat.raceId);
             const iconFile = (mainRace && mainRace.type === 'trail') ? 'icon-trail.jpg' : 'icon-road.jpg';
-            
             h += `<div class="my-race-item"><div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div><div class="my-race-date"><div class="my-race-day">${da}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${dat.name}</div><div style="font-size:11px; color:#888;">${dat.category}</div></div><button class="btn-delete" onclick="removeFromMyRaces('${d.id}')">×</button></div>`;
         });
         const lc = document.getElementById('my-races-list'); if (lc) lc.innerHTML = h || '<p style="color:gray; font-size:12px;">Henüz hedef yok.</p>'; renderCalendar();
@@ -611,7 +593,7 @@ function updateUIForUser(user, role) {
     document.querySelector('#view-locker .profile-header h3').innerText = user.displayName; document.querySelector('#view-locker .profile-header .avatar').style.backgroundImage = `url('${user.photoURL}')`;
     document.querySelector('.login-prompt').style.display = 'none'; document.getElementById('my-races-section').style.display = 'block';
     const statsSection = document.getElementById('my-stats-section'); if (statsSection) statsSection.style.display = 'block';
-    document.getElementById('feed-header-card').style.display = 'flex'; // Feed kartını aç
+    document.getElementById('feed-header-card').style.display = 'flex'; 
     if (role === 'admin') {
         document.querySelector('.role-badge').innerText = "YÖNETİCİ"; document.querySelector('.role-badge').style.background = "#D32F2F";
         if (!document.getElementById('btnAdmin')) { const btn = document.createElement('button'); btn.id = 'btnAdmin'; btn.innerHTML = "⚡ YÖNETİCİ PANELİ"; btn.className = "btn-primary"; btn.style.marginTop = "15px"; btn.style.background = "#D32F2F"; btn.onclick = () => switchView('admin'); document.querySelector('#view-locker .profile-header').appendChild(btn); }
@@ -624,7 +606,7 @@ function updateUIForGuest() {
     if (profileTrigger) { profileTrigger.classList.remove('active'); profileTrigger.innerHTML = `<span class="material-icons-round guest-icon">person_outline</span>`; }
     document.querySelector('#view-locker .profile-header h3').innerText = "Misafir Kullanıcı"; document.querySelector('.login-prompt').style.display = 'block'; document.getElementById('my-races-section').style.display = 'none';
     const statsSection = document.getElementById('my-stats-section'); if (statsSection) statsSection.style.display = 'none';
-    document.getElementById('feed-header-card').style.display = 'none'; // Feed kartını gizle
+    document.getElementById('feed-header-card').style.display = 'none'; 
     if (document.getElementById('btnAdmin')) document.getElementById('btnAdmin').remove(); if (document.getElementById('btnLogout')) document.getElementById('btnLogout').remove();
 }
 
