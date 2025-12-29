@@ -1,75 +1,95 @@
-console.log("Checkpoint Collective - Final Sürüm (v4.6 - Safety Net) 🚀");
+console.log("Checkpoint Collective - Bulletproof Sürüm (v4.7) 🚀");
 
 // ==========================================
-// 1. BAŞLANGIÇ VE AYARLAR
+// 1. ACİL DURUM SİGORTASI (EN ÜSTTE)
+// ==========================================
+// Kodun geri kalanı hata verse bile bu sayaç çalışır ve 4 sn sonra uygulamayı açar.
+setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && !splash.classList.contains('hidden')) {
+        console.warn("⚠️ Acil Durum Protokolü: Uygulama zorla açılıyor...");
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 500);
+        
+        // Eğer hiçbir sayfa aktif değilse Landing'i aç
+        if(!document.querySelector('.view.active')) {
+            const landing = document.getElementById('view-landing');
+            const header = document.getElementById('main-header');
+            const nav = document.getElementById('bottom-nav-bar');
+            if(landing) {
+                landing.classList.add('active');
+                landing.style.display = 'flex';
+            }
+            if(header) header.style.display = 'none';
+            if(nav) nav.style.display = 'none';
+        }
+    }
+}, 4000);
+
+// ==========================================
+// 2. GLOBAL DEĞİŞKENLER VE AYARLAR
 // ==========================================
 
-firebase.initializeApp(firebaseConfig);
-const auth = firebase.auth();
-const db = firebase.firestore();
-
-// --- GLOBAL DEĞİŞKENLER ---
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 let selectedFullDate = null;
-
-let allRaces = [];      
-let myRaces = [];       
-let myWorkouts = [];    
-let workoutTemplates = []; 
-
-let currentUserRole = 'free';
-let currentUserId = null;
-
-let activeStudentId = null; 
-let studentYear = new Date().getFullYear();
-let studentMonth = new Date().getMonth();
-
-let selectedRpe = 0;
-let editingWorkoutId = null; 
-let openWorkoutId = null;    
-
+let allRaces = []; let myRaces = []; let myWorkouts = []; let workoutTemplates = []; 
+let currentUserRole = 'free'; let currentUserId = null;
+let activeStudentId = null; let studentYear = new Date().getFullYear(); let studentMonth = new Date().getMonth();
+let selectedRpe = 0; let editingWorkoutId = null; let openWorkoutId = null;    
 let chartInstances = {};
 
+// Firebase ve Auth Tanımları (Hata alırsa patlamasın diye boş tanımlıyoruz)
+let auth = null;
+let db = null;
+
 // ==========================================
-// 2. GİRİŞ VE YÖNLENDİRME
+// 3. BAŞLATMA (HATA KORUMALI)
 // ==========================================
 
-// Yardımcı: Logoyu ekrandan kaldır
-function hideSplashScreen() {
-    const splash = document.getElementById('splash-screen');
-    if (splash && !splash.classList.contains('hidden')) {
-        splash.classList.add('hidden');
-        setTimeout(() => splash.remove(), 500);
+document.addEventListener('DOMContentLoaded', () => {
+    try {
+        // Firebase Başlatma Denemesi
+        if (typeof firebase !== 'undefined' && typeof firebaseConfig !== 'undefined') {
+            if (!firebase.apps.length) {
+                firebase.initializeApp(firebaseConfig);
+            }
+            auth = firebase.auth();
+            db = firebase.firestore();
+            
+            // Ana Auth Dinleyicisi
+            auth.onAuthStateChanged(handleAuthChange);
+        } else {
+            throw new Error("Firebase SDK veya Config bulunamadı!");
+        }
+    } catch (error) {
+        console.error("🔥 KRİTİK HATA:", error);
+        alert("Bağlantı hatası. Uygulama çevrimdışı modda açılıyor.");
+        // Hata olsa bile Guest modunda aç
+        enterAsGuest(); 
+        hideSplashScreen();
     }
-}
+});
 
-function loginWithGoogle() {
-    const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => alert("Giriş Hatası: " + e.message));
-}
+// ==========================================
+// 4. ANA MANTIK FONKSİYONLARI
+// ==========================================
 
-function enterAsGuest() {
-    switchView('feed');
-}
-
-// Ana Yetkilendirme Döngüsü
-auth.onAuthStateChanged(async (user) => {
-    // Firebase cevap verdi, logoyu kaldırabiliriz
-    hideSplashScreen(); 
+async function handleAuthChange(user) {
+    // Firebase cevap verdi, logoyu güvenle kaldırabiliriz
+    hideSplashScreen();
 
     if (user) {
         // --- KULLANICI GİRİŞ YAPMIŞ ---
         currentUserId = user.uid;
-        
-        const userRef = db.collection('users').doc(user.uid);
         try {
+            const userRef = db.collection('users').doc(user.uid);
             const doc = await userRef.get();
             if (!doc.exists) {
                 await userRef.set({ name: user.displayName, email: user.email, photo: user.photoURL, role: 'free', joinedAt: new Date() });
             }
             currentUserRole = doc.data() ? doc.data().role : 'free';
-        } catch (e) { console.error(e); }
+        } catch (e) { console.error("User Fetch Error:", e); }
         
         updateUIForUser(user, currentUserRole);
         loadMyRaces(); 
@@ -78,20 +98,26 @@ auth.onAuthStateChanged(async (user) => {
         if (currentUserRole === 'admin') { loadUsers(); loadAdminDashboard(); loadTemplates(); }
         
         switchView('feed');
-
     } else {
         // --- MİSAFİR ---
         currentUserId = null; currentUserRole = 'free';
         myRaces = []; myWorkouts = []; workoutTemplates = []; activeStudentId = null;
         updateUIForGuest();
-        
         switchView('landing');
     }
-    
-    loadNews(); loadRaces();
-});
+    // Genel verileri yükle
+    loadNews(); 
+    loadRaces();
+}
 
-// UI Yönlendirme
+function hideSplashScreen() {
+    const splash = document.getElementById('splash-screen');
+    if (splash && !splash.classList.contains('hidden')) {
+        splash.classList.add('hidden');
+        setTimeout(() => splash.remove(), 500);
+    }
+}
+
 function switchView(viewName) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
@@ -99,6 +125,7 @@ function switchView(viewName) {
     const target = document.getElementById('view-' + viewName);
     if(target) target.classList.add('active');
 
+    // Menü Kontrolü
     const header = document.getElementById('main-header');
     const bottomNav = document.getElementById('bottom-nav-bar');
 
@@ -110,9 +137,16 @@ function switchView(viewName) {
         if(bottomNav) bottomNav.style.display = 'flex';
     }
 
+    // Temizlik
     if (viewName === 'admin') { activeStudentId = null; }
-    if (viewName === 'discover') { selectedFullDate = null; document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); renderCalendar(); showUpcomingRaces(); }
+    if (viewName === 'discover') { 
+        selectedFullDate = null; 
+        document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); 
+        renderCalendar(); 
+        showUpcomingRaces(); 
+    }
     
+    // Navigasyon Işığı
     const map = { 'feed': 0, 'discover': 1, 'tools': 2, 'locker': 3 }; 
     if (map[viewName] !== undefined && bottomNav) {
         document.querySelectorAll('.nav-item')[map[viewName]].classList.add('active');
@@ -120,26 +154,29 @@ function switchView(viewName) {
 }
 
 // ==========================================
-// 3. İÇERİK YÖNETİMİ
+// 5. İÇERİK VE UI GÜNCELLEMELERİ
 // ==========================================
 
 function updateFeedHeader() {
     const hour = new Date().getHours();
     let greet = "Merhaba";
     if(hour < 12) greet = "Günaydın"; else if(hour < 18) greet = "Tünaydın"; else greet = "İyi Akşamlar";
+    
     let name = "Misafir";
-    if(auth.currentUser) name = auth.currentUser.displayName.split(' ')[0];
+    if(auth && auth.currentUser) name = auth.currentUser.displayName.split(' ')[0];
     
     const greetMsg = document.getElementById('greet-msg');
     const greetStat = document.getElementById('greet-stat');
+
     if(greetMsg) greetMsg.innerText = `${greet}, ${name}!`;
     if(greetStat) {
-        const msgs = ["Bugün kendin için bir şey yap.", "Adım adım hedefe.", "Koşu senin özgürlüğün.", "İyi antrenmanlar!", "Bugün harika bir gün."];
+        const msgs = ["Bugün kendin için bir şey yap.", "Adım adım hedefe.", "Koşu senin özgürlüğün.", "Hareket et, iyi hisset.", "İyi antrenmanlar!"];
         greetStat.innerText = msgs[Math.floor(Math.random() * msgs.length)];
     }
 }
 
 function loadNews() {
+    if(!db) return;
     db.collection('news').orderBy('date', 'desc').onSnapshot(snapshot => {
         let html = '';
         snapshot.forEach(doc => {
@@ -153,19 +190,31 @@ function loadNews() {
             }
             html += `<div class="news-card"><div class="news-img" style="background:${data.color || '#333'}"></div><div class="news-content"><div style="font-size:9px; color:var(--orange); font-weight:bold;">${data.tag}</div><h4>${data.title}</h4><div style="font-size:12px; color:#ccc; margin-top:5px;">${contentHtml}</div></div></div>`;
         });
-        document.getElementById('news-container').innerHTML = html || '<p style="text-align:center; color:gray">Henüz duyuru yok.</p>';
+        const container = document.getElementById('news-container');
+        if(container) container.innerHTML = html || '<p style="text-align:center; color:gray">Henüz duyuru yok.</p>';
     });
 }
 
+function loginWithGoogle() {
+    if(!auth) return alert("Sistem başlatılamadı.");
+    const provider = new firebase.auth.GoogleAuthProvider();
+    auth.signInWithPopup(provider).catch(e => alert("Giriş Hatası: " + e.message));
+}
+
+function enterAsGuest() {
+    switchView('feed');
+}
+
 // ==========================================
-// 4. ARAÇLAR VE GRAFİKLER
+// 6. DİĞER FONKSİYONLAR (ARAÇLAR, TAKVİM VS.)
 // ==========================================
 
 function calculatePace() {
     const dist = parseFloat(document.getElementById('toolDist').value);
     const time = parseFloat(document.getElementById('toolTime').value);
     if (!dist || !time) return;
-    const paceDec = time / dist; const paceMin = Math.floor(paceDec); const paceSec = Math.round((paceDec - paceMin) * 60); const secStr = paceSec < 10 ? '0' + paceSec : paceSec;
+    const paceDec = time / dist; const paceMin = Math.floor(paceDec); const paceSec = Math.round((paceDec - paceMin) * 60); 
+    const secStr = paceSec < 10 ? '0' + paceSec : paceSec;
     document.getElementById('resultPace').innerText = `Ortalama Pace: ${paceMin}:${secStr} /km`;
 }
 
@@ -175,7 +224,7 @@ function calculateHR() {
     const maxHR = 220 - age;
     const z2_min = Math.round(maxHR * 0.60); const z2_max = Math.round(maxHR * 0.70);
     const z4_min = Math.round(maxHR * 0.80); const z4_max = Math.round(maxHR * 0.90);
-    document.getElementById('resultHR').innerHTML = `<strong>Maksimum Nabız:</strong> ${maxHR}<br><span style="color:#4ECDC4">Zone 2 (Yağ Yakımı):</span> ${z2_min} - ${z2_max}<br><span style="color:#FF6B35">Zone 4 (Laktat Eşiği):</span> ${z4_min} - ${z4_max}`;
+    document.getElementById('resultHR').innerHTML = `<strong>Maksimum Nabız:</strong> ${maxHR}<br><span style="color:#4ECDC4">Zone 2:</span> ${z2_min}-${z2_max}<br><span style="color:#FF6B35">Zone 4:</span> ${z4_min}-${z4_max}`;
 }
 
 function calculateVolumeFromTitle(title) {
@@ -185,6 +234,7 @@ function calculateVolumeFromTitle(title) {
 }
 
 function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
+    if (typeof Chart === 'undefined') return;
     const completedWorkouts = workouts.filter(w => w.isCompleted).sort((a, b) => a.date.localeCompare(b.date)).slice(-10);
     const rpeLabels = completedWorkouts.map(w => w.date.slice(5));
     const rpeData = completedWorkouts.map(w => w.reportRpe || 0);
@@ -210,17 +260,13 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
     }
 }
 
-// ==========================================
-// 5. FONKSİYONLAR (TAKVİM, KAYIT, VS.)
-// ==========================================
-
 function loadMyWorkouts(userId) {
+    if(!db) return;
     db.collection('users').doc(userId).collection('workouts').onSnapshot(snapshot => {
         if (userId === currentUserId) {
             myWorkouts = [];
             snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; myWorkouts.push(d); });
-            renderCalendar(); 
-            if (selectedFullDate) showDayDetails(selectedFullDate); 
+            renderCalendar(); if (selectedFullDate) showDayDetails(selectedFullDate); 
             renderCharts('myRpeChart', 'myConsistencyChart', myWorkouts, 'myVolumeChart');
             updateFeedHeader();
         }
@@ -230,6 +276,7 @@ function loadMyWorkouts(userId) {
 }
 
 function loadTemplates() {
+    if(!db) return;
     db.collection('templates').orderBy('title', 'asc').onSnapshot(snap => {
         workoutTemplates = [];
         let html = '<option value="">📂 Şablondan Yükle...</option>';
@@ -246,17 +293,19 @@ function loadTemplateToInputs() {
 
 function openWorkoutAssignModal(dateStr) {
     editingWorkoutId = null; 
-    document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr; document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr;
+    document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr; 
+    document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr;
     document.getElementById('workoutTitle').value = ''; document.getElementById('workoutDesc').value = '';
     document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ";
     const chk = document.getElementById('saveAsTemplate');
     const selectBox = document.getElementById('templateSelector');
     if (currentUserRole === 'admin') {
-        if (chk) chk.parentElement.style.display = 'flex'; if (selectBox) selectBox.style.display = 'block'; chk.checked = false;
+        if (chk) chk.parentElement.style.display = 'flex'; if (selectBox) selectBox.style.display = 'block'; if(chk) chk.checked = false;
     } else {
         if (chk) chk.parentElement.style.display = 'none'; if (selectBox) selectBox.style.display = 'none'; activeStudentId = currentUserId;
     }
-    if (selectBox) selectBox.value = ""; document.getElementById('modal-workout-assign').style.display = 'flex';
+    if (selectBox) selectBox.value = ""; 
+    document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
 function editWorkout() {
@@ -275,6 +324,7 @@ function editWorkout() {
 function closeWorkoutModal() { document.getElementById('modal-workout-assign').style.display = 'none'; editingWorkoutId = null; }
 
 function saveWorkout() {
+    if(!db) return;
     let targetId = activeStudentId; if(currentUserRole !== 'admin') targetId = currentUserId; if (!targetId) return;
     const dateStr = document.getElementById('modalWorkoutDateLabel').dataset.date; const title = document.getElementById('workoutTitle').value; const desc = document.getElementById('workoutDesc').value;
     const chk = document.getElementById('saveAsTemplate'); const saveAsTemplate = chk ? chk.checked : false;
@@ -391,6 +441,7 @@ function changeStudentMonth(dir) { studentMonth += dir; if(studentMonth < 0) { s
 function clickStudentDate(dateStr) { db.collection('users').doc(activeStudentId).collection('workouts').where('date','==',dateStr).get().then(snap=>{ if(!snap.empty){ const d=snap.docs[0]; const w=d.data(); openWorkoutView(d.id, w.title, w.date, w.desc, w.isCompleted, w.stravaLink, activeStudentId, w.reportRpe, w.reportNote); } else { openWorkoutAssignModal(dateStr); } }); }
 
 function loadUsers() {
+    if(!db) return;
     db.collection('users').orderBy('joinedAt', 'desc').onSnapshot(snapshot => {
         let html = '';
         snapshot.forEach(doc => {
@@ -402,7 +453,7 @@ function loadUsers() {
 }
 
 function loadMyRaces() {
-    if (!currentUserId) return;
+    if (!currentUserId || !db) return;
     db.collection('users').doc(currentUserId).collection('my_races').orderBy('date', 'asc').onSnapshot(snap => {
         myRaces = []; let h = '';
         snap.forEach(d => {
@@ -411,7 +462,7 @@ function loadMyRaces() {
             const iconFile = (mainRace && mainRace.type === 'trail') ? 'icon-trail.jpg' : 'icon-road.jpg';
             h += `<div class="my-race-item"><div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div><div class="my-race-date"><div class="my-race-day">${da}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${dat.name}</div><div style="font-size:11px; color:#888;">${dat.category}</div></div><button class="btn-delete" onclick="removeFromMyRaces('${d.id}')">×</button></div>`;
         });
-        const lc = document.getElementById('my-races-list'); if (lc) lc.innerHTML = h || '<p style="color:gray; font-size:12px;">Henüz hedef yok.</p>'; renderCalendar();
+        const lc = document.getElementById('my-races-list'); if (lc) lc.innerHTML = h || '<p style="color:gray; font-size:12px;">Henüz hedef yok.</p>'; renderCalendar(); updateFeedHeader();
     });
 }
 
@@ -452,7 +503,10 @@ function updateUIForGuest() {
     if (document.getElementById('btnAdmin')) document.getElementById('btnAdmin').remove(); if (document.getElementById('btnLogout')) document.getElementById('btnLogout').remove();
 }
 
-function loadRaces() { db.collection('races').orderBy('date', 'asc').onSnapshot(snapshot => { allRaces = []; snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; allRaces.push(d); }); renderCalendar(); if (!selectedFullDate) showUpcomingRaces(); else showDayDetails(selectedFullDate); }); }
+function loadRaces() { 
+    if(!db) return;
+    db.collection('races').orderBy('date', 'asc').onSnapshot(snapshot => { allRaces = []; snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; allRaces.push(d); }); renderCalendar(); if (!selectedFullDate) showUpcomingRaces(); else showDayDetails(selectedFullDate); }); 
+}
 
 function renderCalendar() {
     const el=document.getElementById('calendar-days'); if(!el) return;
@@ -541,15 +595,3 @@ function showUpcomingRaces() {
 }
 
 document.addEventListener('click', (e) => { if (e.target && e.target.id == 'btnLogin') loginWithGoogle(); });
-
-// GÜVENLİK SİGORTASI (SAFETY NET - Kilitlenmeyi Önler)
-setTimeout(() => {
-    const splash = document.getElementById('splash-screen');
-    if (splash && !splash.classList.contains('hidden')) {
-        console.warn("Safety Net: Uygulama zorla açılıyor...");
-        hideSplashScreen();
-        if(!document.querySelector('.view.active')) {
-            switchView('landing');
-        }
-    }
-}, 4000);
