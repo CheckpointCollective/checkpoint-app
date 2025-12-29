@@ -1,6 +1,11 @@
-console.log("Checkpoint Collective - Final Sürüm (v4.1 - Free Kısıtlamalı) 🚀");
+console.log("Checkpoint Collective - Final Master Sürüm (v4.2) 🚀");
+
+// ==========================================
+// 1. BAŞLANGIÇ VE AYARLAR
+// ==========================================
 
 document.addEventListener('DOMContentLoaded', () => {
+    // Splash Screen (Açılış Animasyonu)
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
         if (splash) {
@@ -10,6 +15,7 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2500);
 });
 
+// Firebase Başlatma
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
@@ -19,14 +25,17 @@ let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 let selectedFullDate = null;
 
+// Veri Listeleri
 let allRaces = [];      
 let myRaces = [];       
 let myWorkouts = [];    
 let workoutTemplates = []; 
 
+// Kullanıcı Durumu
 let currentUserRole = 'free';
 let currentUserId = null;
 
+// Koçluk / Admin Değişkenleri
 let activeStudentId = null; 
 let studentYear = new Date().getFullYear();
 let studentMonth = new Date().getMonth();
@@ -35,17 +44,30 @@ let selectedRpe = 0;
 let editingWorkoutId = null; 
 let openWorkoutId = null;    
 
+// Grafik Referansları
 let chartInstances = {};
 
-// --- 2. GİRİŞ ---
+// ==========================================
+// 2. GİRİŞ VE YÖNLENDİRME (LANDING LOGIC)
+// ==========================================
+
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => alert("Hata: " + e.message));
+    auth.signInWithPopup(provider).catch(e => alert("Giriş Hatası: " + e.message));
 }
 
+function enterAsGuest() {
+    // Misafir girişinde direkt içeri al
+    switchView('feed');
+}
+
+// Ana Yetkilendirme Döngüsü
 auth.onAuthStateChanged(async (user) => {
     if (user) {
+        // --- KULLANICI GİRİŞ YAPMIŞ ---
         currentUserId = user.uid;
+        
+        // Veritabanı Kontrolü / Kayıt
         const userRef = db.collection('users').doc(user.uid);
         try {
             const doc = await userRef.get();
@@ -55,22 +77,89 @@ auth.onAuthStateChanged(async (user) => {
             currentUserRole = doc.data() ? doc.data().role : 'free';
         } catch (e) { console.error(e); }
         
+        // Arayüzü Güncelle
         updateUIForUser(user, currentUserRole);
+        
+        // Verileri Yükle
         loadMyRaces(); 
         loadMyWorkouts(currentUserId); 
         
-        if (currentUserRole === 'admin') { loadUsers(); loadAdminDashboard(); loadTemplates(); }
+        // Admin ise ekstra verileri yükle
+        if (currentUserRole === 'admin') { 
+            loadUsers(); 
+            loadAdminDashboard(); 
+            loadTemplates(); 
+        }
+        
+        // Giriş yapılıysa Landing'i gösterme, direkt akışa git
+        switchView('feed');
+
     } else {
-        currentUserId = null; currentUserRole = 'free';
-        myRaces = []; myWorkouts = []; workoutTemplates = []; activeStudentId = null;
+        // --- ÇIKIŞ YAPILMIŞ / MİSAFİR ---
+        currentUserId = null; 
+        currentUserRole = 'free';
+        
+        // Verileri temizle
+        myRaces = []; 
+        myWorkouts = []; 
+        workoutTemplates = []; 
+        activeStudentId = null;
+        
         updateUIForGuest();
+        
+        // Giriş yoksa Landing Page'de bekle
+        switchView('landing');
     }
-    loadNews(); loadRaces();
+    
+    // Herkesin görebileceği veriler
+    loadNews(); 
+    loadRaces();
 });
+
+// UI Yönlendirme ve Menü Gizleme/Açma
+function switchView(viewName) {
+    // 1. Tüm sayfaları gizle
+    document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+    
+    // 2. Alt menü aktifliğini temizle
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    
+    // 3. Hedef sayfayı aç
+    const target = document.getElementById('view-' + viewName);
+    if(target) target.classList.add('active');
+
+    // 4. LANDING SAYFASI KONTROLÜ (Header ve Footer Gizle/Göster)
+    const header = document.getElementById('main-header');
+    const bottomNav = document.getElementById('bottom-nav-bar');
+
+    if (viewName === 'landing') {
+        if(header) header.style.display = 'none';
+        if(bottomNav) bottomNav.style.display = 'none';
+    } else {
+        if(header) header.style.display = 'flex';
+        if(bottomNav) bottomNav.style.display = 'flex';
+    }
+
+    // 5. Sayfa özel temizlikleri
+    if (viewName === 'admin') { activeStudentId = null; }
+    if (viewName === 'discover') { 
+        selectedFullDate = null; 
+        document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); 
+        renderCalendar(); 
+        showUpcomingRaces(); 
+    }
+    
+    // 6. Alt menü ikonunu yak
+    const map = { 'feed': 0, 'discover': 1, 'tools': 2, 'locker': 3 }; 
+    if (map[viewName] !== undefined && bottomNav) {
+        document.querySelectorAll('.nav-item')[map[viewName]].classList.add('active');
+    }
+}
 
 // ==========================================
 // 3. ARAÇLAR (TOOLS)
 // ==========================================
+
 function calculatePace() {
     const dist = parseFloat(document.getElementById('toolDist').value);
     const time = parseFloat(document.getElementById('toolTime').value);
@@ -104,27 +193,32 @@ function calculateHR() {
 // 4. GRAFİK SİSTEMİ (AKILLI HACİM DAHİL)
 // ==========================================
 
+// Başlıktan (Örn: "10K Koşu") mesafeyi okuyan fonksiyon
 function calculateVolumeFromTitle(title) {
     if(!title) return 0;
     const match = title.match(/(\d+(?:\.\d+)?)\s*(k|km|m)/i);
     if (match) {
         let val = parseFloat(match[1]);
-        if (match[2].toLowerCase() === 'm') val = val / 1000; 
+        if (match[2].toLowerCase() === 'm') val = val / 1000; // Metreyi km yap
         return val;
     }
     return 0;
 }
 
 function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
+    // Sadece tamamlananlar ve tarihe göre sıralı
     const completedWorkouts = workouts.filter(w => w.isCompleted).sort((a, b) => a.date.localeCompare(b.date)).slice(-10);
     
     const rpeLabels = completedWorkouts.map(w => w.date.slice(5));
     const rpeData = completedWorkouts.map(w => w.reportRpe || 0);
+    
     const totalAssigned = workouts.length;
     const totalCompleted = workouts.filter(w => w.isCompleted).length;
     const notDone = totalAssigned - totalCompleted;
+    
     const volumeData = completedWorkouts.map(w => calculateVolumeFromTitle(w.title));
 
+    // CHART 1: EFOR EĞRİSİ (RPE)
     const ctxRpe = document.getElementById(canvasRpeId);
     if (ctxRpe) {
         if (chartInstances[canvasRpeId]) chartInstances[canvasRpeId].destroy();
@@ -134,6 +228,8 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 10, grid: { color:'rgba(255,255,255,0.1)' } }, x: { display: false } } }
         });
     }
+
+    // CHART 2: DEVAMLILIK (PIE)
     const ctxPie = document.getElementById(canvasPieId);
     if (ctxPie) {
         if (chartInstances[canvasPieId]) chartInstances[canvasPieId].destroy();
@@ -143,6 +239,8 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
             options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
         });
     }
+
+    // CHART 3: HACİM (VOLUME)
     if(canvasVolId) {
         const ctxVol = document.getElementById(canvasVolId);
         if (ctxVol) {
@@ -157,7 +255,7 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
 }
 
 // ==========================================
-// 5. ANTRENMAN & ŞABLON
+// 5. ANTRENMAN & ŞABLON YÖNETİMİ
 // ==========================================
 
 function loadMyWorkouts(userId) {
@@ -167,6 +265,7 @@ function loadMyWorkouts(userId) {
             snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; myWorkouts.push(d); });
             renderCalendar(); 
             if (selectedFullDate) showDayDetails(selectedFullDate); 
+            // Grafikleri çiz
             renderCharts('myRpeChart', 'myConsistencyChart', myWorkouts, 'myVolumeChart');
         }
         if (activeStudentId === userId) renderStudentCalendar(); 
@@ -182,33 +281,34 @@ function loadTemplates() {
         const selector = document.getElementById('templateSelector'); if (selector) selector.innerHTML = html;
     });
 }
+
 function loadTemplateToInputs() {
     const selector = document.getElementById('templateSelector'); const selectedId = selector.value; if (!selectedId) return;
     const template = workoutTemplates.find(t => t.id === selectedId);
     if (template) { document.getElementById('workoutTitle').value = template.title; document.getElementById('workoutDesc').value = template.desc; }
 }
 
-// YENİ: FREE KULLANICI KISITLAMASI BURADA
+// --- ANTRENMAN MODAL & İZİNLER ---
 function openWorkoutAssignModal(dateStr) {
     editingWorkoutId = null; 
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr; document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr;
     document.getElementById('workoutTitle').value = ''; document.getElementById('workoutDesc').value = '';
     document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ";
     
-    // Şablon ve Admin kontrolleri
+    // YETKİ KONTROLÜ (Free vs Admin)
     const chk = document.getElementById('saveAsTemplate');
     const selectBox = document.getElementById('templateSelector');
     
     if (currentUserRole === 'admin') {
-        // ADMIN GÖRÜNÜMÜ: Her şeyi gör
+        // ADMIN: Şablonları görür, kullanır
         if (chk) chk.parentElement.style.display = 'flex';
         if (selectBox) selectBox.style.display = 'block';
         chk.checked = false;
     } else {
-        // FREE GÖRÜNÜMÜ: Şablonları gizle
+        // FREE: Şablonları göremez, sadece kendine yazar
         if (chk) chk.parentElement.style.display = 'none';
         if (selectBox) selectBox.style.display = 'none';
-        activeStudentId = currentUserId; // Hedef kendisi
+        activeStudentId = currentUserId; // Hedef mecburen kendisi
     }
 
     if (selectBox) selectBox.value = "";
@@ -217,16 +317,21 @@ function openWorkoutAssignModal(dateStr) {
 
 function editWorkout() {
     if (!activeStudentId && !openWorkoutId) return; 
+    // Free kullanıcı kendi antrenmanını düzenliyorsa hedefi set et
     if(currentUserRole !== 'admin' && !activeStudentId) activeStudentId = currentUserId;
 
-    const currentTitle = document.getElementById('viewWorkoutTitle').innerText; const currentDesc = document.getElementById('viewWorkoutDesc').innerText; const currentDate = document.getElementById('viewWorkoutDate').innerText;
+    const currentTitle = document.getElementById('viewWorkoutTitle').innerText; 
+    const currentDesc = document.getElementById('viewWorkoutDesc').innerText; 
+    const currentDate = document.getElementById('viewWorkoutDate').innerText;
+    
     closeWorkoutViewModal();
+    
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + currentDate; document.getElementById('modalWorkoutDateLabel').dataset.date = currentDate;
     document.getElementById('workoutTitle').value = currentTitle; document.getElementById('workoutDesc').value = currentDesc;
     document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE";
     editingWorkoutId = openWorkoutId;
     
-    // Düzenlemede her zaman şablon kutusunu gizle (Karmaşa olmasın)
+    // Düzenlerken şablon kaydetmeyi gizle
     const chk = document.getElementById('saveAsTemplate'); if (chk) chk.parentElement.style.display = 'none';
     const selectBox = document.getElementById('templateSelector'); if (selectBox) selectBox.style.display = 'none';
     
@@ -237,6 +342,7 @@ function closeWorkoutModal() { document.getElementById('modal-workout-assign').s
 
 function saveWorkout() {
     let targetId = activeStudentId;
+    // Free ise hedef kendisi
     if(currentUserRole !== 'admin') targetId = currentUserId;
     if (!targetId) return;
 
@@ -250,6 +356,7 @@ function saveWorkout() {
         workoutRef.doc(editingWorkoutId).update({ title: title, desc: desc }).then(() => { closeWorkoutModal(); });
     } else {
         workoutRef.add({ date: dateStr, title: title, desc: desc, isCompleted: false, stravaLink: "", assignedBy: currentUserId, createdAt: new Date(), reportRpe: 0, reportNote: "" }).then(() => {
+            // Sadece Admin şablon kaydedebilir
             if (saveAsTemplate && currentUserRole === 'admin') { db.collection('templates').add({ title: title, desc: desc, createdAt: new Date() }); }
             closeWorkoutModal(); alert("Antrenman Eklendi! 📨");
         });
@@ -268,6 +375,7 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
     document.getElementById('viewWorkoutTitle').innerText = title; document.getElementById('viewWorkoutDate').innerText = date; document.getElementById('viewWorkoutDesc').innerText = desc;
     
     const adminActions = document.getElementById('admin-workout-actions'); 
+    // Adminse veya kendi antrenmanımsa silme/düzenleme butonlarını gör
     if (currentUserRole === 'admin' || ownerId === currentUserId || (!ownerId && currentUserRole!=='admin')) { 
         adminActions.style.display = 'flex'; 
     } else { 
@@ -285,6 +393,7 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
         selectedRpe = 0; document.getElementById('rpeValueDisplay').innerText = "Seçilmedi"; document.querySelectorAll('.rpe-box').forEach(b => b.classList.remove('selected')); document.getElementById('reportNote').value = ""; document.getElementById('reportStrava').value = "";
     }
 }
+
 function showReportForm() { document.getElementById('btnOpenReportForm').style.display = 'none'; document.getElementById('workout-report-form').style.display = 'block'; }
 function selectRpe(val) { selectedRpe = val; document.getElementById('rpeValueDisplay').innerText = val + "/10"; document.querySelectorAll('.rpe-box').forEach(b => b.classList.remove('selected')); const boxes = document.querySelectorAll('.rpe-box'); if (boxes[val - 1]) boxes[val - 1].classList.add('selected'); }
 function submitWorkoutReport() {
@@ -296,7 +405,7 @@ function submitWorkoutReport() {
 function closeWorkoutViewModal() { document.getElementById('modal-workout-view').style.display = 'none'; openWorkoutId = null; editingWorkoutId = null; }
 
 // ==========================================
-// 6. DASHBOARD & ÖĞRENCİ DETAYI
+// 6. DASHBOARD & ÖĞRENCİ DETAYI (ADMİN)
 // ==========================================
 
 async function loadAdminDashboard() {
@@ -305,33 +414,47 @@ async function loadAdminDashboard() {
     const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
     const todayStr = today.toISOString().slice(0, 10); const yesterdayStr = yesterday.toISOString().slice(0, 10);
     let html = `<div class="dashboard-summary-card"><div class="dashboard-header">GÜNLÜK ÖZET</div>`; let hasAlerts = false;
-    const usersSnap = await db.collection('users').where('role', '!=', 'admin').get();
-    const promises = usersSnap.docs.map(async (userDoc) => {
-        const userData = userDoc.data(); const uid = userDoc.id;
-        const wSnap = await db.collection('users').doc(uid).collection('workouts').get();
-        let userItems = '';
-        wSnap.forEach(wDoc => {
-            const w = wDoc.data();
-            if (w.date === yesterdayStr && !w.isCompleted) { userItems += `<div class="dashboard-item missed" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon missed">⚠️</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> dünkü antrenmanı kaçırdı.</div></div>`; hasAlerts = true; }
-            if ((w.date === todayStr || w.date === yesterdayStr) && w.isCompleted) { userItems += `<div class="dashboard-item review" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon review">🔔</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> rapor gönderdi (RPE: ${w.reportRpe || '-'}).</div></div>`; hasAlerts = true; }
-            if (w.date === todayStr && !w.isCompleted) { userItems += `<div class="dashboard-item today" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon today">📅</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> bugün antrenman yapacak.</div></div>`; hasAlerts = true; }
-        }); return userItems;
+    
+    // Realtime listener for users
+    db.collection('users').where('role', '!=', 'admin').onSnapshot(snap => {
+        let promises = snap.docs.map(async (userDoc) => {
+            const userData = userDoc.data(); const uid = userDoc.id;
+            const wSnap = await db.collection('users').doc(uid).collection('workouts').get();
+            let userItems = '';
+            wSnap.forEach(wDoc => {
+                const w = wDoc.data();
+                if (w.date === yesterdayStr && !w.isCompleted) { userItems += `<div class="dashboard-item missed" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon missed">⚠️</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> dünkü antrenmanı kaçırdı.</div></div>`; hasAlerts = true; }
+                if ((w.date === todayStr || w.date === yesterdayStr) && w.isCompleted) { userItems += `<div class="dashboard-item review" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon review">🔔</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> rapor gönderdi (RPE: ${w.reportRpe || '-'}).</div></div>`; hasAlerts = true; }
+                if (w.date === todayStr && !w.isCompleted) { userItems += `<div class="dashboard-item today" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon today">📅</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> bugün antrenman yapacak.</div></div>`; hasAlerts = true; }
+            }); return userItems;
+        });
+        
+        Promise.all(promises).then(results => {
+            html += results.join('');
+            if (!hasAlerts) html += `<p style="font-size:12px; color:gray; text-align:center;">Bugün için hareket yok.</p>`;
+            html += `</div>`; container.innerHTML = html;
+        });
     });
-    const results = await Promise.all(promises); html += results.join('');
-    if (!hasAlerts) html += `<p style="font-size:12px; color:gray; text-align:center;">Bugün için hareket yok.</p>`; html += `</div>`; container.innerHTML = html;
 }
 
 async function openStudentDetail(targetUserId, dateToFocus) {
     activeStudentId = targetUserId;
     const userDoc = await db.collection('users').doc(targetUserId).get(); const userData = userDoc.data();
     document.getElementById('student-name').innerText = userData.name; document.getElementById('student-avatar').style.backgroundImage = `url('${userData.photo}')`;
-    db.collection('users').doc(targetUserId).collection('my_races').orderBy('date', 'asc').get().then(snap => { let l=''; snap.forEach(d=>{const r=d.data();const [y,m,x]=r.date.split('-');l+=`<div class="my-race-item" style="border-left-color:#4a90e2;"><div class="my-race-date"><div class="my-race-day" style="color:#4a90e2;">${x}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${r.name}</div><div style="font-size:11px; color:#888;">${r.category}</div></div></div>`;}); document.getElementById('student-races-list').innerHTML = l || '<p style="font-size:12px;color:gray;">Hedef yok.</p>';});
     
+    // Hedef Yarışları Çek
+    db.collection('users').doc(targetUserId).collection('my_races').orderBy('date', 'asc').get().then(snap => { 
+        let l=''; snap.forEach(d=>{const r=d.data();const [y,m,x]=r.date.split('-');l+=`<div class="my-race-item" style="border-left-color:#4a90e2;"><div class="my-race-date"><div class="my-race-day" style="color:#4a90e2;">${x}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${r.name}</div><div style="font-size:11px; color:#888;">${r.category}</div></div></div>`;}); 
+        document.getElementById('student-races-list').innerHTML = l || '<p style="font-size:12px;color:gray;">Hedef yok.</p>';
+    });
+    
+    // Antrenmanları ve Grafikleri Çek
     db.collection('users').doc(targetUserId).collection('workouts').get().then(snap => {
         const studentWorkouts = []; snap.forEach(d => { const dd = d.data(); dd.id = d.id; studentWorkouts.push(dd); });
         renderStudentCalendarWithData(studentWorkouts);
         renderCharts('studentRpeChart', 'studentConsistencyChart', studentWorkouts, 'studentVolumeChart');
     });
+    
     if (dateToFocus) { const [y, m, d] = dateToFocus.split('-'); studentYear = parseInt(y); studentMonth = parseInt(m) - 1; setTimeout(() => clickStudentDate(dateToFocus), 600); }
     switchView('student-detail');
 }
@@ -349,7 +472,14 @@ function renderStudentCalendarWithData(workouts) {
     }
     document.getElementById('student-calendar-days').innerHTML=html;
 }
-function renderStudentCalendar() { db.collection('users').doc(activeStudentId).collection('workouts').get().then(snap => { const workouts = []; snap.forEach(d => { const dd = d.data(); dd.id = d.id; workouts.push(dd); }); renderStudentCalendarWithData(workouts); }); }
+
+function renderStudentCalendar() { 
+    db.collection('users').doc(activeStudentId).collection('workouts').get().then(snap => { 
+        const workouts = []; snap.forEach(d => { const dd = d.data(); dd.id = d.id; workouts.push(dd); }); 
+        renderStudentCalendarWithData(workouts); 
+    }); 
+}
+
 function changeStudentMonth(dir) { studentMonth += dir; if(studentMonth < 0) { studentMonth = 11; studentYear--; } else if (studentMonth > 11) { studentMonth = 0; studentYear++; } renderStudentCalendar(); }
 function clickStudentDate(dateStr) { db.collection('users').doc(activeStudentId).collection('workouts').where('date','==',dateStr).get().then(snap=>{ if(!snap.empty){ const d=snap.docs[0]; const w=d.data(); openWorkoutView(d.id, w.title, w.date, w.desc, w.isCompleted, w.stravaLink, activeStudentId, w.reportRpe, w.reportNote); } else { openWorkoutAssignModal(dateStr); } }); }
 
@@ -367,6 +497,7 @@ function loadUsers() {
         document.getElementById('user-list-container').innerHTML = html || '<p>Kullanıcı yok.</p>';
     });
 }
+
 function loadMyRaces() {
     if (!currentUserId) return;
     db.collection('users').doc(currentUserId).collection('my_races').orderBy('date', 'asc').onSnapshot(snap => {
@@ -387,8 +518,7 @@ function openAddModal() { if (!selectedFullDate) return; document.getElementById
 function closeAddModal() { document.getElementById('modal-overlay').style.display = 'none'; document.getElementById('modalRaceName').value = ''; document.getElementById('modalRaceCat').value = ''; document.getElementById('modalRaceWeb').value = ''; }
 
 function saveRaceFromModal() {
-    const name = document.getElementById('modalRaceName').value; const cat = document.getElementById('modalRaceCat').value; const type = document.getElementById('modalRaceType').value;
-    const web = document.getElementById('modalRaceWeb').value;
+    const name = document.getElementById('modalRaceName').value; const cat = document.getElementById('modalRaceCat').value; const type = document.getElementById('modalRaceType').value; const web = document.getElementById('modalRaceWeb').value;
     if (!name) return alert("İsim giriniz");
     db.collection('races').add({ name: name, category: cat, date: selectedFullDate, type: type, website: web, createdAt: new Date() }).then(closeAddModal);
 }
@@ -401,12 +531,7 @@ function loadNews() {
     });
 }
 function saveNews() { const title = document.getElementById('newsTitle').value; const tag = document.getElementById('newsTag').value; const content = document.getElementById('newsContent').value; if (!title) return alert("Başlık giriniz"); db.collection('news').add({ title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35' }).then(() => { alert("Haber Yayınlandı!"); switchView('feed'); }); }
-function switchView(viewName) {
-    document.querySelectorAll('.view').forEach(v => v.classList.remove('active')); document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active')); document.getElementById('view-' + viewName).classList.add('active');
-    if (viewName === 'admin') { activeStudentId = null; }
-    if (viewName === 'discover') { selectedFullDate = null; document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); renderCalendar(); showUpcomingRaces(); }
-    const map = { 'feed': 0, 'discover': 1, 'tools': 2, 'locker': 3 }; if (map[viewName] !== undefined) document.querySelectorAll('.nav-item')[map[viewName]].classList.add('active');
-}
+
 function updateUIForUser(user, role) {
     const profileTrigger = document.getElementById('profile-trigger');
     if (profileTrigger) { profileTrigger.classList.add('active'); profileTrigger.innerHTML = `<div class="user-avatar-small" style="background-image:url('${user.photoURL}')"></div>`; }
@@ -419,6 +544,7 @@ function updateUIForUser(user, role) {
     } else { document.querySelector('.role-badge').innerText = "MEMBER"; }
     if (!document.getElementById('btnLogout')) { const btn = document.createElement('button'); btn.id = 'btnLogout'; btn.innerText = "ÇIKIŞ YAP"; btn.className = "btn-primary"; btn.style.marginTop = "10px"; btn.style.background = "#333"; btn.onclick = () => auth.signOut(); document.getElementById('view-locker').appendChild(btn); }
 }
+
 function updateUIForGuest() {
     const profileTrigger = document.getElementById('profile-trigger');
     if (profileTrigger) { profileTrigger.classList.remove('active'); profileTrigger.innerHTML = `<span class="material-icons-round guest-icon">person_outline</span>`; }
@@ -428,9 +554,37 @@ function updateUIForGuest() {
 }
 
 function loadRaces() { db.collection('races').orderBy('date', 'asc').onSnapshot(snapshot => { allRaces = []; snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; allRaces.push(d); }); renderCalendar(); if (!selectedFullDate) showUpcomingRaces(); else showDayDetails(selectedFullDate); }); }
-function renderCalendar() { const el=document.getElementById('calendar-days'); if(!el) return; const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"]; document.getElementById('currentMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`; const firstDay = new Date(currentYear, currentMonth, 1).getDay(); const startDay = firstDay === 0 ? 6 : firstDay - 1; const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate(); let html = ''; for (let i = 0; i < startDay; i++) { html += `<div class="day-cell empty"></div>`; } for (let day = 1; day <= daysInMonth; day++) { const monthStr = (currentMonth + 1).toString().padStart(2, '0'); const dayStr = day.toString().padStart(2, '0'); const fullDate = `${currentYear}-${monthStr}-${dayStr}`; const race = allRaces.find(r => r.date === fullDate); const hasMyRace = myRaces.some(r => r.date === fullDate); const workout = myWorkouts.find(w => w.date === fullDate); let workoutClass = ''; if (workout) workoutClass = workout.isCompleted ? 'has-workout completed' : 'has-workout'; let classes = workoutClass; if (hasMyRace) classes += ' has-my-race'; else if (race) classes += ' has-race'; let iconHtml = ''; if (race) { const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg'; iconHtml = `<img src="${iconFile}" class="race-type-icon-small">`; } const todayClass = (new Date().toISOString().slice(0, 10) === fullDate) ? 'today' : ''; const selectedClass = (selectedFullDate === fullDate) ? 'selected' : ''; html += `<div class="day-cell ${classes} ${todayClass} ${selectedClass}" onclick="selectDate('${fullDate}', this)">${day} ${iconHtml}</div>`; } el.innerHTML = html; }
+
+function renderCalendar() {
+    const calendarEl = document.getElementById('calendar-days'); if(!calendarEl) return;
+    const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
+    document.getElementById('currentMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`;
+    const firstDay = new Date(currentYear, currentMonth, 1).getDay(); const startDay = firstDay === 0 ? 6 : firstDay - 1; const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
+    
+    let html = '';
+    for (let i = 0; i < startDay; i++) { html += `<div class="day-cell empty"></div>`; }
+    for (let day = 1; day <= daysInMonth; day++) {
+        const monthStr = (currentMonth + 1).toString().padStart(2, '0'); const dayStr = day.toString().padStart(2, '0'); const fullDate = `${currentYear}-${monthStr}-${dayStr}`;
+        const race = allRaces.find(r => r.date === fullDate); const hasMyRace = myRaces.some(r => r.date === fullDate); const workout = myWorkouts.find(w => w.date === fullDate);
+        
+        let workoutClass = ''; if (workout) workoutClass = workout.isCompleted ? 'has-workout completed' : 'has-workout';
+        let classes = workoutClass; if (hasMyRace) classes += ' has-my-race'; else if (race) classes += ' has-race';
+        
+        let iconHtml = '';
+        if (race) {
+            const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg';
+            iconHtml = `<img src="${iconFile}" class="race-type-icon-small">`;
+        }
+
+        const todayClass = (new Date().toISOString().slice(0, 10) === fullDate) ? 'today' : '';
+        const selectedClass = (selectedFullDate === fullDate) ? 'selected' : '';
+        html += `<div class="day-cell ${classes} ${todayClass} ${selectedClass}" onclick="selectDate('${fullDate}', this)">${day} ${iconHtml}</div>`;
+    }
+    calendarEl.innerHTML = html;
+}
+
 function changeMonth(dir) { currentMonth += dir; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); }
-function selectDate(fd, el) { if (selectedFullDate === fd) { element.classList.remove('selected'); selectedFullDate = null; showUpcomingRaces(); } else { document.querySelectorAll('.day-cell').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); selectedFullDate = fd; showDayDetails(fd); } }
+function selectDate(fd, el) { if (selectedFullDate === fd) { el.classList.remove('selected'); selectedFullDate = null; showUpcomingRaces(); } else { document.querySelectorAll('.day-cell').forEach(e => e.classList.remove('selected')); el.classList.add('selected'); selectedFullDate = fd; showDayDetails(fd); } }
 function goToDate(dateStr) { const [y, m, d] = dateStr.split('-'); currentYear = parseInt(y); currentMonth = parseInt(m) - 1; renderCalendar(); setTimeout(() => { selectedFullDate = dateStr; showDayDetails(dateStr); document.querySelectorAll('.day-cell').forEach(cell => { if (parseInt(cell.innerText) == parseInt(d) && !cell.classList.contains('empty')) { cell.classList.add('selected'); } }); }, 100); }
 
 function showDayDetails(dateStr) {
@@ -453,29 +607,15 @@ function showDayDetails(dateStr) {
             const isAdded = myRaces.some(r => r.raceId === race.id); const btnText = isAdded ? "✓" : "＋"; const btnClass = isAdded ? "btn-target added" : "btn-target";
             const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg';
             let webLink = '';
-            if(race.website) {
-                webLink = `<a href="${race.website}" target="_blank" class="btn-link">🌐 WEB</a>`;
-            }
-
-            html += `
-            <div class="race-mini-card">
-                <div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div>
-                <div style="flex:1;">
-                    <div style="font-weight:bold;">${race.name}</div>
-                    <div style="font-size:11px; color:gray;">${race.category}</div>
-                </div>
-                <div style="display:flex; align-items:center; gap:5px;">
-                    ${webLink}
-                    <button class="${btnClass}" onclick="toggleMyRace('${race.id}', '${race.name}', '${race.date}', '${race.category}', this)">${btnText}</button>
-                    ${deleteBtn}
-                </div>
-            </div>`;
+            if(race.website) { webLink = `<a href="${race.website}" target="_blank" class="btn-link">🌐 WEB</a>`; }
+            html += `<div class="race-mini-card"><div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div><div style="flex:1;"><div style="font-weight:bold;">${race.name}</div><div style="font-size:11px; color:gray;">${race.category}</div></div><div style="display:flex; align-items:center; gap:5px;">${webLink}<button class="${btnClass}" onclick="toggleMyRace('${race.id}', '${race.name}', '${race.date}', '${race.category}', this)">${btnText}</button>${deleteBtn}</div></div>`;
         });
     }
 
     if (html === '') html = '<p style="color:gray; font-size:12px; margin-top:10px;">Etkinlik yok.</p>';
     document.getElementById('selected-day-races').innerHTML = html;
     
+    // FREE KULLANICI / ADMIN BUTONU
     const actionContainer = document.getElementById('day-action-buttons');
     if(actionContainer) {
         let btnHtml = '';
@@ -499,19 +639,7 @@ function showUpcomingRaces() {
         upcoming.forEach(race => {
             const [y, m, d] = race.date.split('-');
             const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg';
-            html += `
-            <div class="race-mini-card" onclick="goToDate('${race.date}')" style="cursor:pointer;">
-                <div style="margin-right:15px; text-align:center; min-width:35px;">
-                    <div style="font-weight:bold; color:white;">${d}</div>
-                    <div style="font-size:10px; color:gray;">${m}</div>
-                </div>
-                <div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div>
-                <div style="flex:1;">
-                    <div style="font-weight:bold;">${race.name}</div>
-                    <div style="font-size:11px; color:gray;">${race.category}</div>
-                </div>
-                <div style="font-size:14px; opacity:0.5;">❯</div>
-            </div>`;
+            html += `<div class="race-mini-card" onclick="goToDate('${race.date}')" style="cursor:pointer;"><div style="margin-right:15px; text-align:center; min-width:35px;"><div style="font-weight:bold; color:white;">${d}</div><div style="font-size:10px; color:gray;">${m}</div></div><div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div><div style="flex:1;"><div style="font-weight:bold;">${race.name}</div><div style="font-size:11px; color:gray;">${race.category}</div></div><div style="font-size:14px; opacity:0.5;">❯</div></div>`;
         });
     } else { html = '<p style="color:gray; font-size:12px; margin-top:10px;">Yakında yarış yok.</p>'; }
     document.getElementById('selected-day-races').innerHTML = html; 

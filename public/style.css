@@ -278,3 +278,87 @@ canvas {
     border-radius: 8px;
     margin-top: 10px;
 }
+/* ... Eski stiller aynı ... */
+
+/* LANDING PAGE STİLİ */
+#view-landing {
+    display: none; /* JS ile açılacak */
+    flex-direction: column;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background: linear-gradient(135deg, #1a1a1a 0%, #000000 100%);
+    padding: 30px;
+    text-align: center;
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    z-index: 2000; /* Splash'ten sonraki en üst katman */
+}
+
+#view-landing.active {
+    display: flex; /* Flex yapısını korumak için */
+}
+
+.landing-logo-area {
+    margin-bottom: 50px;
+}
+
+.landing-img {
+    width: 100px;
+    height: auto;
+    margin-bottom: 10px;
+    opacity: 0.9;
+}
+
+.landing-title {
+    font-family: 'Bebas Neue', sans-serif;
+    font-size: 48px;
+    letter-spacing: 2px;
+    line-height: 0.9;
+    color: white;
+    margin: 0;
+}
+
+.landing-slogan {
+    color: var(--gray);
+    font-size: 14px;
+    letter-spacing: 4px;
+    margin-top: 10px;
+    font-weight: 600;
+}
+
+.landing-actions {
+    width: 100%;
+    max-width: 300px;
+    display: flex;
+    flex-direction: column;
+    gap: 15px;
+}
+
+.btn-landing-login {
+    background: white;
+    color: black;
+    font-weight: 800;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 50px;
+    border-radius: 25px;
+    font-size: 14px;
+}
+
+.btn-landing-guest {
+    background: transparent;
+    border: 1px solid rgba(255,255,255,0.2);
+    color: white;
+    font-size: 12px;
+    border-radius: 25px;
+}
+
+.landing-divider {
+    font-size: 11px;
+    color: rgba(255,255,255,0.3);
+    text-transform: uppercase;
+}
