@@ -1,6 +1,10 @@
-console.log("Checkpoint Collective - Master Sürüm (v2.5) 🚀");
+console.log("Checkpoint Collective - Final Master Sürüm (v3.0) 🚀");
 
-// --- 1. BAŞLANGIÇ AYARLARI ---
+// ==========================================
+// 1. BAŞLANGIÇ VE AYARLAR
+// ==========================================
+
+// Splash Ekranı (Açılış)
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
@@ -11,71 +15,90 @@ document.addEventListener('DOMContentLoaded', () => {
     }, 2500);
 });
 
+// Firebase Başlatma
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
 const db = firebase.firestore();
 
-// --- 2. GLOBAL DEĞİŞKENLER ---
+// --- GLOBAL DEĞİŞKENLER ---
 let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth(); 
 let selectedFullDate = null; 
 
-// Veri Listeleri
+// Veri Listeleri (Hafıza)
 let allRaces = [];      // Tüm yarışlar
-let myRaces = [];       // Hedef yarışlarım
-let myWorkouts = [];    // Antrenmanlarım
+let myRaces = [];       // Benim hedef yarışlarım
+let myWorkouts = [];    // Benim antrenmanlarım (veya bakılan öğrencinin)
 
 // Kullanıcı Durumu
 let currentUserRole = 'free';
 let currentUserId = null;
 
 // Koçluk Modu Değişkenleri
-let activeStudentId = null; 
+let activeStudentId = null; // Şu an hangi öğrenciye bakıyoruz?
 let studentYear = new Date().getFullYear();
 let studentMonth = new Date().getMonth();
 
-// Antrenman Düzenleme/Raporlama Değişkenleri
+// Antrenman İşlemleri Değişkenleri
 let selectedRpe = 0;
 let editingWorkoutId = null; // Düzenleme modu için ID
-let openWorkoutId = null;    // O an açık olan antrenman ID'si
+let openWorkoutId = null;    // O an açık olan detay ID
 
-// --- 3. GİRİŞ VE ANA DÖNGÜ ---
+// ==========================================
+// 2. GİRİŞ VE KULLANICI YÖNETİMİ
+// ==========================================
+
 function loginWithGoogle() {
     const provider = new firebase.auth.GoogleAuthProvider();
-    auth.signInWithPopup(provider).catch(e => alert(e.message));
+    auth.signInWithPopup(provider).catch(e => alert("Giriş Hatası: " + e.message));
 }
 
+// Ana Döngü: Kullanıcı Durumu Değişince Çalışır
 auth.onAuthStateChanged(async (user) => {
     if (user) {
+        // --- GİRİŞ YAPILDI ---
         currentUserId = user.uid;
-        console.log("Giriş yapıldı:", user.displayName);
+        console.log("Aktif Kullanıcı:", user.displayName);
 
-        // Kullanıcıyı Veritabanına Kaydet/Kontrol Et
+        // Kullanıcıyı Veritabanına Kaydet (İlk kez geliyorsa)
         const userRef = db.collection('users').doc(user.uid);
-        const doc = await userRef.get();
-        if (!doc.exists) {
-            await userRef.set({
-                name: user.displayName, email: user.email, photo: user.photoURL, role: 'free', joinedAt: new Date()
-            });
+        try {
+            const doc = await userRef.get();
+            if (!doc.exists) {
+                await userRef.set({
+                    name: user.displayName,
+                    email: user.email,
+                    photo: user.photoURL,
+                    role: 'free', // Varsayılan rol
+                    joinedAt: new Date()
+                });
+            }
+            // Rolü çek
+            currentUserRole = doc.data() ? doc.data().role : 'free';
+        } catch (e) {
+            console.error("Kullanıcı verisi alınamadı", e);
         }
         
-        // Rolü çek ve arayüzü güncelle
-        currentUserRole = doc.data().role || 'free';
+        // Arayüzü Güncelle
         updateUIForUser(user, currentUserRole);
         
-        // Kişisel verileri yükle
+        // Kişisel Verileri Yükle
         loadMyRaces(); 
         loadMyWorkouts(currentUserId); 
         
-        // Eğer adminse öğrenci listesini yükle
-        if(currentUserRole === 'admin') loadUsers();
+        // Eğer Admin ise Ekstra Verileri Yükle
+        if(currentUserRole === 'admin') {
+            loadUsers(); // Öğrenci listesi
+            loadAdminDashboard(); // Dashboard verileri
+        }
 
     } else {
-        // Çıkış yapıldı
+        // --- ÇIKIŞ YAPILDI ---
         currentUserId = null;
         currentUserRole = 'free';
         myRaces = [];
         myWorkouts = [];
+        activeStudentId = null;
         updateUIForGuest();
     }
     
@@ -85,13 +108,93 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ==========================================
-// 4. ANTRENMAN SİSTEMİ (CRUD & RPE)
+// 3. ADMIN DASHBOARD (AKILLI ÖZET)
 // ==========================================
 
-// Antrenmanları Çekme (Kendim veya Öğrenci)
+async function loadAdminDashboard() {
+    const container = document.getElementById('admin-dashboard-container');
+    if (!container) return; // Admin değilse veya sayfa yoksa dur
+
+    container.innerHTML = '<p style="text-align:center;font-size:11px;color:gray;">Takım analizi yapılıyor...</p>';
+
+    // Tarih Hesaplamaları
+    const today = new Date();
+    const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
+    
+    const todayStr = today.toISOString().slice(0, 10); 
+    const yesterdayStr = yesterday.toISOString().slice(0, 10);
+
+    let html = `<div class="dashboard-summary-card"><div class="dashboard-header">GÜNLÜK ÖZET</div>`;
+    let hasAlerts = false;
+
+    // 1. Tüm öğrencileri çek (Admin olmayanlar)
+    const usersSnap = await db.collection('users').where('role', '!=', 'admin').get();
+    
+    // 2. Her öğrencinin antrenmanlarını kontrol et (Parallel İşlem)
+    const promises = usersSnap.docs.map(async (userDoc) => {
+        const userData = userDoc.data();
+        const uid = userDoc.id;
+        
+        // Bu öğrencinin antrenmanlarını çek
+        const wSnap = await db.collection('users').doc(uid).collection('workouts').get();
+        
+        let userItems = '';
+
+        wSnap.forEach(wDoc => {
+            const w = wDoc.data();
+            
+            // A) KIRMIZI ALARM: Dün antrenman vardı ama yapılmadı
+            if (w.date === yesterdayStr && !w.isCompleted) {
+                userItems += `
+                <div class="dashboard-item missed" onclick="openStudentDetail('${uid}', '${w.date}')">
+                    <span class="dashboard-icon missed">⚠️</span>
+                    <div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> dünkü antrenmanı kaçırdı.</div>
+                </div>`;
+                hasAlerts = true;
+            }
+
+            // B) YEŞİL RAPOR: Bugün veya Dün yapıldı ve raporlandı
+            if ((w.date === todayStr || w.date === yesterdayStr) && w.isCompleted) {
+                userItems += `
+                <div class="dashboard-item review" onclick="openStudentDetail('${uid}', '${w.date}')">
+                    <span class="dashboard-icon review">🔔</span>
+                    <div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> rapor gönderdi (RPE: ${w.reportRpe || '-'}).</div>
+                </div>`;
+                hasAlerts = true;
+            }
+
+            // C) MAVİ BİLGİ: Bugün antrenmanı var (henüz yapılmadı)
+            if (w.date === todayStr && !w.isCompleted) {
+                userItems += `
+                <div class="dashboard-item today" onclick="openStudentDetail('${uid}', '${w.date}')">
+                    <span class="dashboard-icon today">📅</span>
+                    <div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> bugün antrenman yapacak.</div>
+                </div>`;
+                hasAlerts = true;
+            }
+        });
+        return userItems;
+    });
+
+    const results = await Promise.all(promises);
+    html += results.join('');
+
+    if (!hasAlerts) {
+        html += `<p style="font-size:12px; color:gray; text-align:center;">Bugün için kritik bir durum yok. Takım stabil. 👍</p>`;
+    }
+
+    html += `</div>`;
+    container.innerHTML = html;
+}
+
+// ==========================================
+// 4. ANTRENMAN YÖNETİMİ (CRUD & RPE)
+// ==========================================
+
+// Antrenmanları Veritabanından Yükle
 function loadMyWorkouts(userId) {
     db.collection('users').doc(userId).collection('workouts').onSnapshot(snapshot => {
-          // Kendi verimse ana değişkeni güncelle
+          // Eğer kendi hesabıma bakıyorsam ana değişkeni güncelle
           if(userId === currentUserId) {
               myWorkouts = [];
               snapshot.forEach(doc => { 
@@ -99,53 +202,52 @@ function loadMyWorkouts(userId) {
                   d.id = doc.id; 
                   myWorkouts.push(d); 
               });
-              renderCalendar(); // Ana takvimi yenile
-              if(selectedFullDate) showDayDetails(selectedFullDate); // Detay açıksa yenile
+              renderCalendar(); // Ana takvimdeki mavi noktalar için
+              if(selectedFullDate) showDayDetails(selectedFullDate); // Eğer detay açıksa yenile
           }
           
-          // Admin olarak öğrenciye bakıyorsam onun takvimini yenile
+          // Eğer Admin olarak bir öğrenciye bakıyorsam onun takvimini yenile
           if(activeStudentId === userId) {
              renderStudentCalendar();
           }
+          
+          // Adminsem dashboard'u da tazele
+          if(currentUserRole === 'admin') loadAdminDashboard();
     });
 }
 
-// Modal Açma: Yeni Antrenman Ata
+// Modal Aç: Yeni Antrenman Ekle
 function openWorkoutAssignModal(dateStr) {
     editingWorkoutId = null; // Yeni kayıt modu
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr;
     document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr; 
     
-    // Formu temizle
     document.getElementById('workoutTitle').value = '';
     document.getElementById('workoutDesc').value = '';
-    document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ"; // Başlığı düzelt
+    document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ";
     
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
-// Modal Açma: Mevcut Antrenmanı Düzenle
+// Modal Aç: Var Olanı Düzenle
 function editWorkout() {
     if(!activeStudentId || !openWorkoutId) return;
 
-    // Şu an açık olan detaydaki verileri al
+    // Detay ekranındaki verileri al
     const currentTitle = document.getElementById('viewWorkoutTitle').innerText;
     const currentDesc = document.getElementById('viewWorkoutDesc').innerText;
     const currentDate = document.getElementById('viewWorkoutDate').innerText; 
 
-    // Detay penceresini kapat
-    closeWorkoutViewModal();
+    closeWorkoutViewModal(); // Detayı kapat
 
-    // Ekleme penceresini aç (Verilerle dolu)
+    // Ekleme penceresini verilerle aç
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + currentDate;
     document.getElementById('modalWorkoutDateLabel').dataset.date = currentDate;
     document.getElementById('workoutTitle').value = currentTitle;
     document.getElementById('workoutDesc').value = currentDesc;
     document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE";
 
-    // Düzenleme modunu aktifleştir
-    editingWorkoutId = openWorkoutId;
-    
+    editingWorkoutId = openWorkoutId; // Düzenleme modu
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
@@ -154,7 +256,7 @@ function closeWorkoutModal() {
     editingWorkoutId = null;
 }
 
-// KAYDETME FONKSİYONU (Hem Yeni Hem Düzenleme)
+// KAYDET (Yeni veya Güncelleme)
 function saveWorkout() {
     if(!activeStudentId) return; 
     
@@ -162,7 +264,7 @@ function saveWorkout() {
     const title = document.getElementById('workoutTitle').value;
     const desc = document.getElementById('workoutDesc').value;
 
-    if(!title) return alert("Başlık yazmalısın.");
+    if(!title) return alert("Lütfen bir başlık giriniz.");
 
     const workoutRef = db.collection('users').doc(activeStudentId).collection('workouts');
 
@@ -173,7 +275,7 @@ function saveWorkout() {
             desc: desc
         }).then(() => {
             closeWorkoutModal();
-            // alert("Güncellendi ✅");
+            // Alert vermeye gerek yok, otomatik kapanır
         });
     } else {
         // YENİ KAYIT
@@ -189,12 +291,12 @@ function saveWorkout() {
             reportNote: ""
         }).then(() => { 
             closeWorkoutModal(); 
-            // alert("Gönderildi 📨"); 
+            alert("Antrenman Öğrenciye Gönderildi! 📨"); 
         });
     }
 }
 
-// SİLME FONKSİYONU
+// SİLME
 function deleteWorkout() {
     if(!activeStudentId || !openWorkoutId) return;
     
@@ -206,19 +308,19 @@ function deleteWorkout() {
     }
 }
 
-// DETAY GÖRÜNTÜLEME (Raporlama Ekranı)
+// DETAY GÖRÜNTÜLEME ve RAPORLAMA PENCERESİ
 function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, ownerId, rpe, note) {
     openWorkoutId = workoutId;
     
     const modal = document.getElementById('modal-workout-view');
     modal.style.display = 'flex';
     
-    // İçerikleri Doldur
+    // Verileri Doldur
     document.getElementById('viewWorkoutTitle').innerText = title;
     document.getElementById('viewWorkoutDate').innerText = date;
     document.getElementById('viewWorkoutDesc').innerText = desc;
 
-    // Admin Butonlarını Kontrol Et
+    // Admin Aksiyon Butonları (Sadece Admin Görür)
     const adminActions = document.getElementById('admin-workout-actions');
     if (currentUserRole === 'admin') {
         adminActions.style.display = 'flex';
@@ -226,16 +328,15 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
         adminActions.style.display = 'none';
     }
 
-    // Tamamlanma Durumu Kontrolü
+    // Duruma Göre İçerik (Yapıldı mı?)
     const displayDiv = document.getElementById('workout-report-display');
     const formDiv = document.getElementById('workout-report-form');
     const btnOpen = document.getElementById('btnOpenReportForm');
     
-    // Firebase verisi string veya boolean gelebilir, garantiye alalım
     const completed = (isCompleted === true || isCompleted === 'true');
 
     if(completed) {
-        // YAPILMIŞ: Raporu Göster
+        // --- YAPILMIŞ: RAPOR GÖSTER ---
         displayDiv.style.display = 'block';
         formDiv.style.display = 'none';
         btnOpen.style.display = 'none';
@@ -249,13 +350,12 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
             document.getElementById('displayStrava').innerHTML = "";
         }
     } else {
-        // YAPILMAMIŞ: Tamamla Butonunu Göster
+        // --- YAPILMAMIŞ: TAMAMLA BUTONU ---
         displayDiv.style.display = 'none';
         formDiv.style.display = 'none';
         
-        // Eğer bakan kişi Öğrenci ise veya Kendi hesabına bakıyorsa butonu görsün
-        // Admin sadece izliyorsa butonu görmesin mi? 
-        // Şimdilik Admin de tamamlayabilsin (test için kolaylık).
+        // Eğer kullanıcı kendi antrenmanına bakıyorsa veya Admin ise
+        // Şimdilik herkes tamamla butonunu görsün (test için)
         btnOpen.style.display = 'block';
         
         // Formu temizle
@@ -277,20 +377,17 @@ function selectRpe(val) {
     document.getElementById('rpeValueDisplay').innerText = val + "/10";
     document.querySelectorAll('.rpe-box').forEach(b => b.classList.remove('selected'));
     
-    // Kutuları boya
     const boxes = document.querySelectorAll('.rpe-box');
     if(boxes[val-1]) boxes[val-1].classList.add('selected');
 }
 
 function submitWorkoutReport() {
     if(!openWorkoutId) return;
-    if(selectedRpe === 0) return alert("Lütfen zorluk derecesi seç (1-10).");
+    if(selectedRpe === 0) return alert("Lütfen zorluk derecesini seçin.");
 
     const note = document.getElementById('reportNote').value;
     const link = document.getElementById('reportStrava').value;
-    
-    // Hangi kullanıcının antrenmanını güncelliyoruz?
-    const targetId = activeStudentId || currentUserId;
+    const targetId = activeStudentId || currentUserId; // Hangi kullanıcı?
     
     db.collection('users').doc(targetId).collection('workouts').doc(openWorkoutId).update({
         isCompleted: true,
@@ -300,18 +397,17 @@ function submitWorkoutReport() {
         completedAt: new Date()
     }).then(() => {
         closeWorkoutViewModal();
-        // UI otomatik güncellenecek (onSnapshot sayesinde)
     });
 }
 
 function closeWorkoutViewModal() {
     document.getElementById('modal-workout-view').style.display = 'none';
     openWorkoutId = null;
+    editingWorkoutId = null;
 }
 
-
 // ==========================================
-// 5. TAKVİM VE GÜNLÜK İŞLEMLER
+// 5. TAKVİM VE YARIŞLAR (ANA EKRAN)
 // ==========================================
 
 function loadRaces() {
@@ -322,7 +418,7 @@ function loadRaces() {
             d.id = doc.id; 
             allRaces.push(d); 
         });
-        renderCalendar();
+        renderCalendar(); // Takvimi çiz
         
         if(!selectedFullDate) showUpcomingRaces();
         else showDayDetails(selectedFullDate);
@@ -342,8 +438,12 @@ function renderCalendar() {
     
     let html = '';
     
-    for (let i = 0; i < startDay; i++) html += `<div class="day-cell empty"></div>`;
+    // Boşluklar
+    for (let i = 0; i < startDay; i++) {
+        html += `<div class="day-cell empty"></div>`;
+    }
     
+    // Günler
     for (let day = 1; day <= daysInMonth; day++) {
         const monthStr = (currentMonth + 1).toString().padStart(2, '0');
         const dayStr = day.toString().padStart(2, '0');
@@ -381,10 +481,12 @@ function changeMonth(direction) {
 
 function selectDate(fullDate, element) {
     if (selectedFullDate === fullDate) { 
+        // Seçimi kaldır
         element.classList.remove('selected'); 
         selectedFullDate = null; 
         showUpcomingRaces(); 
     } else { 
+        // Seç
         document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); 
         element.classList.add('selected'); 
         selectedFullDate = fullDate; 
@@ -401,6 +503,7 @@ function goToDate(dateStr) {
     setTimeout(() => {
         selectedFullDate = dateStr;
         showDayDetails(dateStr);
+        // Görsel seçim
         document.querySelectorAll('.day-cell').forEach(cell => {
              if(parseInt(cell.innerText) == parseInt(d) && !cell.classList.contains('empty')) {
                  cell.classList.add('selected');
@@ -409,7 +512,7 @@ function goToDate(dateStr) {
     }, 100);
 }
 
-// GÜN DETAYI (PANEL İÇERİĞİ)
+// GÜN DETAYI
 function showDayDetails(dateStr) {
     const pnl = document.getElementById('day-details-panel'); 
     pnl.style.display = 'block';
@@ -421,13 +524,12 @@ function showDayDetails(dateStr) {
 
     let html = '';
 
-    // 1. ANTRENMAN VARSA GÖSTER
+    // 1. Antrenman Varsa Göster
     const workout = myWorkouts.find(w => w.date === dateStr);
     if(workout) {
         const statusIcon = workout.isCompleted ? '☑' : '☐';
         const cardClass = workout.isCompleted ? 'workout-mini-card completed' : 'workout-mini-card';
         
-        // Burada parametreleri düzgünce geçirmemiz lazım
         html += `
         <div class="${cardClass}" onclick="openWorkoutView('${workout.id}', '${workout.title}', '${workout.date}', '${workout.desc}', '${workout.isCompleted}', '${workout.stravaLink}', '${currentUserId}', '${workout.reportRpe}', '${workout.reportNote}')">
             <div>
@@ -438,7 +540,7 @@ function showDayDetails(dateStr) {
         </div>`;
     }
 
-    // 2. YARIŞLAR VARSA GÖSTER
+    // 2. Yarışlar Varsa Göster
     const racesThatDay = allRaces.filter(r => r.date === dateStr);
     if (racesThatDay.length > 0) {
         racesThatDay.forEach(race => {
@@ -500,16 +602,15 @@ function showUpcomingRaces() {
     } else { 
         html = '<p style="color:gray; font-size:12px; margin-top:10px;">Yakında yarış yok.</p>'; 
     }
-    
     document.getElementById('selected-day-races').innerHTML = html;
     document.getElementById('btnAddRaceToDay').style.display = 'none';
 }
 
 // ==========================================
-// 6. ÖĞRENCİ YÖNETİMİ & DETAYLAR (ADMIN)
+// 6. ÖĞRENCİ DETAYI ve TAKVİMİ
 // ==========================================
 
-async function openStudentDetail(targetUserId) {
+async function openStudentDetail(targetUserId, dateToFocus) {
     activeStudentId = targetUserId;
     const userDoc = await db.collection('users').doc(targetUserId).get();
     const userData = userDoc.data();
@@ -517,7 +618,7 @@ async function openStudentDetail(targetUserId) {
     document.getElementById('student-name').innerText = userData.name;
     document.getElementById('student-avatar').style.backgroundImage = `url('${userData.photo}')`;
 
-    // Öğrenci Hedefleri
+    // Hedef Yarışları Çek
     db.collection('users').doc(targetUserId).collection('my_races').orderBy('date', 'asc').get()
         .then(snapshot => {
             let listHtml = '';
@@ -539,10 +640,17 @@ async function openStudentDetail(targetUserId) {
             document.getElementById('student-races-list').innerHTML = listHtml || '<p style="font-size:12px;color:gray;">Hedef yok.</p>';
         });
 
-    // Verileri yükle
+    // Eğer dashboarddan geldiyse (dateToFocus), o ayı aç
+    if (dateToFocus) {
+        const [y, m, d] = dateToFocus.split('-');
+        studentYear = parseInt(y);
+        studentMonth = parseInt(m) - 1;
+        // Takvim yüklendikten sonra o günü açması için
+        setTimeout(() => clickStudentDate(dateToFocus), 600); 
+    }
+
     loadMyWorkouts(targetUserId); 
     renderStudentCalendar();
-
     switchView('student-detail');
 }
 
@@ -554,7 +662,7 @@ function renderStudentCalendar() {
     const startDay = firstDay === 0 ? 6 : firstDay - 1; 
     const daysInMonth = new Date(studentYear, studentMonth + 1, 0).getDate();
     
-    // Anlık veri çek (Active Student)
+    // Verileri çek
     db.collection('users').doc(activeStudentId).collection('workouts').get().then(snap => {
         const studentWorkouts = []; 
         snap.forEach(d => {
@@ -592,19 +700,19 @@ function clickStudentDate(dateStr) {
     // Admin öğrenci takvimine tıklayınca
     db.collection('users').doc(activeStudentId).collection('workouts').where('date','==',dateStr).get().then(snap => {
         if(!snap.empty){
-            // Varsa detayı aç (düzenleme/silme yapılabilir)
+            // Varsa detayı aç
             const d = snap.docs[0]; 
             const w = d.data();
             openWorkoutView(d.id, w.title, w.date, w.desc, w.isCompleted, w.stravaLink, activeStudentId, w.reportRpe, w.reportNote);
         } else { 
-            // Yoksa yeni ekle
+            // Yoksa ekle
             openWorkoutAssignModal(dateStr); 
         }
     });
 }
 
 // ==========================================
-// 7. DİĞER YARDIMCI FONKSİYONLAR
+// 7. GENEL YARDIMCI FONKSİYONLAR
 // ==========================================
 
 function loadUsers() {
@@ -670,12 +778,8 @@ function toggleMyRace(raceId, raceName, raceDate, raceCat, btnElement) {
     db.collection('users').doc(currentUserId).collection('my_races').add({ raceId: raceId, name: raceName, date: raceDate, category: raceCat, addedAt: new Date() }).then(() => alert("Eklendi! 🎯"));
 }
 
-function removeFromMyRaces(docId) {
-    if(confirm("Silmek istiyor musun?")) db.collection('users').doc(currentUserId).collection('my_races').doc(docId).delete();
-}
-
+function removeFromMyRaces(docId) { if(confirm("Silmek istiyor musun?")) db.collection('users').doc(currentUserId).collection('my_races').doc(docId).delete(); }
 function deleteRace(raceId) { if(confirm("Silmek istiyor musun?")) db.collection('races').doc(raceId).delete(); }
-
 function openAddModal() { if (!selectedFullDate) return; document.getElementById('modalDateLabel').innerText = selectedFullDate; document.getElementById('modal-overlay').style.display = 'flex'; }
 function closeAddModal() { document.getElementById('modal-overlay').style.display = 'none'; document.getElementById('modalRaceName').value = ''; document.getElementById('modalRaceCat').value = ''; }
 function saveRaceFromModal() { const name = document.getElementById('modalRaceName').value; const cat = document.getElementById('modalRaceCat').value; if (!name) return alert("İsim giriniz"); db.collection('races').add({ name: name, category: cat, date: selectedFullDate, createdAt: new Date() }).then(closeAddModal); }
@@ -693,6 +797,7 @@ function loadNews() {
 
 function saveNews() { const title = document.getElementById('newsTitle').value; const tag = document.getElementById('newsTag').value; const content = document.getElementById('newsContent').value; if (!title) return alert("Başlık giriniz"); db.collection('news').add({ title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35' }).then(() => { alert("Haber Yayınlandı!"); switchView('feed'); }); }
 
+// UI GÜNCELLEMELERİ
 function switchView(viewName) {
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
