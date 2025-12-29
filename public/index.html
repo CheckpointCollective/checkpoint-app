@@ -53,14 +53,8 @@
             
             <div id="my-stats-section" style="display:none;">
                 <div class="charts-row">
-                    <div class="chart-card half">
-                        <h4>🔥 RPE Trendi</h4>
-                        <canvas id="myRpeChart"></canvas>
-                    </div>
-                    <div class="chart-card half">
-                        <h4>🍩 Sadakat</h4>
-                        <canvas id="myConsistencyChart"></canvas>
-                    </div>
+                    <div class="chart-card half"><h4>🔥 RPE Trendi</h4><canvas id="myRpeChart"></canvas></div>
+                    <div class="chart-card half"><h4>🍩 Sadakat</h4><canvas id="myConsistencyChart"></canvas></div>
                 </div>
             </div>
 
@@ -78,18 +72,10 @@
 
         <div id="view-student-detail" class="view">
             <div class="profile-header"><div id="student-avatar" class="avatar" style="border-color:#4a90e2;"></div><h3 id="student-name">Öğrenci Adı</h3><span class="role-badge" style="background:#4a90e2;">ÖĞRENCİ</span></div>
-            
             <div class="charts-row">
-                <div class="chart-card half" style="border-color:#4a90e2;">
-                    <h4 style="color:#4a90e2;">🔥 RPE Trendi</h4>
-                    <canvas id="studentRpeChart"></canvas>
-                </div>
-                <div class="chart-card half" style="border-color:#4a90e2;">
-                    <h4 style="color:#4a90e2;">🍩 Sadakat</h4>
-                    <canvas id="studentConsistencyChart"></canvas>
-                </div>
+                <div class="chart-card half" style="border-color:#4a90e2;"><h4 style="color:#4a90e2;">🔥 RPE Trendi</h4><canvas id="studentRpeChart"></canvas></div>
+                <div class="chart-card half" style="border-color:#4a90e2;"><h4 style="color:#4a90e2;">🍩 Sadakat</h4><canvas id="studentConsistencyChart"></canvas></div>
             </div>
-
             <div class="card"><h4 style="color:#4a90e2; margin-bottom:10px;">🗓️ ANTRENMAN PROGRAMI</h4><div class="calendar-wrapper"><div class="calendar-header-card"><button class="nav-arrow" onclick="changeStudentMonth(-1)">❮</button><h2 id="studentMonthLabel">...</h2><button class="nav-arrow" onclick="changeStudentMonth(1)">❯</button></div><div class="calendar-grid-header"><div>Pzt</div><div>Sal</div><div>Çar</div><div>Per</div><div>Cum</div><div>Cmt</div><div>Paz</div></div><div id="student-calendar-days" class="calendar-grid compact"></div></div></div>
             <div class="card"><h4 style="color:gray; margin-bottom:10px;">🎯 HEDEF YARIŞLARI</h4><div id="student-races-list"></div></div>
             <button onclick="switchView('admin')" class="btn-secondary">🔙 Listeye Dön</button>
@@ -97,7 +83,22 @@
     </div>
 
     <div id="modal-overlay" class="modal-overlay">
-        <div class="modal-card"><h3>YARIŞ EKLE</h3><p id="modalDateLabel" style="color:var(--orange); font-size:12px; margin-bottom:15px;">...</p><input type="text" id="modalRaceName" placeholder="Yarış Adı" class="input-field"><input type="text" id="modalRaceCat" placeholder="Kategori" class="input-field"><button onclick="saveRaceFromModal()" class="btn-primary">KAYDET</button><button onclick="closeAddModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button></div>
+        <div class="modal-card">
+            <h3>YARIŞ EKLE</h3>
+            <p id="modalDateLabel" style="color:var(--orange); font-size:12px; margin-bottom:15px;">...</p>
+            
+            <input type="text" id="modalRaceName" placeholder="Yarış Adı" class="input-field">
+            
+            <select id="modalRaceType" class="input-field" style="color:white;">
+                <option value="road">🛣️ Yol Yarışı</option>
+                <option value="trail">⛰️ Trail (Arazi)</option>
+            </select>
+
+            <input type="text" id="modalRaceCat" placeholder="Kategori (Örn: 21K)" class="input-field">
+            
+            <button onclick="saveRaceFromModal()" class="btn-primary">KAYDET</button>
+            <button onclick="closeAddModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button>
+        </div>
     </div>
 
     <div id="modal-workout-assign" class="modal-overlay">
