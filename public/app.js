@@ -1,4 +1,4 @@
-console.log("Checkpoint Collective - Final Sürüm (v4.0) 🚀");
+console.log("Checkpoint Collective - Final Sürüm (v4.1 - Free Kısıtlamalı) 🚀");
 
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
@@ -69,7 +69,7 @@ auth.onAuthStateChanged(async (user) => {
 });
 
 // ==========================================
-// 3. ARAÇLAR (TOOLS) - YENİ
+// 3. ARAÇLAR (TOOLS)
 // ==========================================
 function calculatePace() {
     const dist = parseFloat(document.getElementById('toolDist').value);
@@ -104,35 +104,27 @@ function calculateHR() {
 // 4. GRAFİK SİSTEMİ (AKILLI HACİM DAHİL)
 // ==========================================
 
-// Yardımcı: Başlıktan (Örn: "10K Koşu") sayıyı çeker
 function calculateVolumeFromTitle(title) {
     if(!title) return 0;
-    // Regex: Sayı ve ardından k, km, m gelenleri bul
     const match = title.match(/(\d+(?:\.\d+)?)\s*(k|km|m)/i);
     if (match) {
         let val = parseFloat(match[1]);
-        if (match[2].toLowerCase() === 'm') val = val / 1000; // Metreyi km'ye çevir
+        if (match[2].toLowerCase() === 'm') val = val / 1000; 
         return val;
     }
     return 0;
 }
 
-function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) { // canvasVolId eklendi
+function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
     const completedWorkouts = workouts.filter(w => w.isCompleted).sort((a, b) => a.date.localeCompare(b.date)).slice(-10);
     
-    // 1. RPE (Efor Eğrisi)
     const rpeLabels = completedWorkouts.map(w => w.date.slice(5));
     const rpeData = completedWorkouts.map(w => w.reportRpe || 0);
-
-    // 2. Sadakat (Devamlılık)
     const totalAssigned = workouts.length;
     const totalCompleted = workouts.filter(w => w.isCompleted).length;
     const notDone = totalAssigned - totalCompleted;
-
-    // 3. Hacim (Smart Volume) - YENİ
     const volumeData = completedWorkouts.map(w => calculateVolumeFromTitle(w.title));
 
-    // --- CHART 1: RPE ---
     const ctxRpe = document.getElementById(canvasRpeId);
     if (ctxRpe) {
         if (chartInstances[canvasRpeId]) chartInstances[canvasRpeId].destroy();
@@ -142,7 +134,6 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) { // canv
             options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 10, grid: { color:'rgba(255,255,255,0.1)' } }, x: { display: false } } }
         });
     }
-    // --- CHART 2: PIE ---
     const ctxPie = document.getElementById(canvasPieId);
     if (ctxPie) {
         if (chartInstances[canvasPieId]) chartInstances[canvasPieId].destroy();
@@ -152,7 +143,6 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) { // canv
             options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
         });
     }
-    // --- CHART 3: VOLUME (YENİ) ---
     if(canvasVolId) {
         const ctxVol = document.getElementById(canvasVolId);
         if (ctxVol) {
@@ -177,10 +167,9 @@ function loadMyWorkouts(userId) {
             snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; myWorkouts.push(d); });
             renderCalendar(); 
             if (selectedFullDate) showDayDetails(selectedFullDate); 
-            // Kendi grafiklerimi güncelle (Volume ID eklendi)
             renderCharts('myRpeChart', 'myConsistencyChart', myWorkouts, 'myVolumeChart');
         }
-        if (activeStudentId === userId) renderStudentCalendar(); // Admin bakışı
+        if (activeStudentId === userId) renderStudentCalendar(); 
         if (currentUserRole === 'admin') loadAdminDashboard();
     });
 }
@@ -199,7 +188,7 @@ function loadTemplateToInputs() {
     if (template) { document.getElementById('workoutTitle').value = template.title; document.getElementById('workoutDesc').value = template.desc; }
 }
 
-// Free kullanıcı için: activeStudentId boşsa kendi ID'sini kullan
+// YENİ: FREE KULLANICI KISITLAMASI BURADA
 function openWorkoutAssignModal(dateStr) {
     editingWorkoutId = null; 
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr; document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr;
@@ -208,24 +197,26 @@ function openWorkoutAssignModal(dateStr) {
     
     // Şablon ve Admin kontrolleri
     const chk = document.getElementById('saveAsTemplate');
-    if (chk) { 
-        chk.checked = false; 
-        // Sadece Admin şablon kaydedebilir
-        chk.parentElement.style.display = (currentUserRole === 'admin') ? 'flex' : 'none';
-    }
-    if (document.getElementById('templateSelector')) document.getElementById('templateSelector').value = "";
+    const selectBox = document.getElementById('templateSelector');
     
-    // Eğer Admin değilsem (Free kullanıcıysam), hedef kendimimdir
-    if(currentUserRole !== 'admin') {
-        activeStudentId = currentUserId; 
+    if (currentUserRole === 'admin') {
+        // ADMIN GÖRÜNÜMÜ: Her şeyi gör
+        if (chk) chk.parentElement.style.display = 'flex';
+        if (selectBox) selectBox.style.display = 'block';
+        chk.checked = false;
+    } else {
+        // FREE GÖRÜNÜMÜ: Şablonları gizle
+        if (chk) chk.parentElement.style.display = 'none';
+        if (selectBox) selectBox.style.display = 'none';
+        activeStudentId = currentUserId; // Hedef kendisi
     }
 
+    if (selectBox) selectBox.value = "";
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
 function editWorkout() {
-    if (!activeStudentId && !openWorkoutId) return; // Güvenlik
-    // Free kullanıcı kendi antrenmanını düzenliyorsa ID'yi set et
+    if (!activeStudentId && !openWorkoutId) return; 
     if(currentUserRole !== 'admin' && !activeStudentId) activeStudentId = currentUserId;
 
     const currentTitle = document.getElementById('viewWorkoutTitle').innerText; const currentDesc = document.getElementById('viewWorkoutDesc').innerText; const currentDate = document.getElementById('viewWorkoutDate').innerText;
@@ -234,14 +225,17 @@ function editWorkout() {
     document.getElementById('workoutTitle').value = currentTitle; document.getElementById('workoutDesc').value = currentDesc;
     document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE";
     editingWorkoutId = openWorkoutId;
+    
+    // Düzenlemede her zaman şablon kutusunu gizle (Karmaşa olmasın)
     const chk = document.getElementById('saveAsTemplate'); if (chk) chk.parentElement.style.display = 'none';
+    const selectBox = document.getElementById('templateSelector'); if (selectBox) selectBox.style.display = 'none';
+    
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
 function closeWorkoutModal() { document.getElementById('modal-workout-assign').style.display = 'none'; editingWorkoutId = null; }
 
 function saveWorkout() {
-    // Free kullanıcı kontrolü
     let targetId = activeStudentId;
     if(currentUserRole !== 'admin') targetId = currentUserId;
     if (!targetId) return;
@@ -273,10 +267,8 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
     const modal = document.getElementById('modal-workout-view'); modal.style.display = 'flex';
     document.getElementById('viewWorkoutTitle').innerText = title; document.getElementById('viewWorkoutDate').innerText = date; document.getElementById('viewWorkoutDesc').innerText = desc;
     
-    // Admin butonları veya Kendi antrenmanım ise
     const adminActions = document.getElementById('admin-workout-actions'); 
-    // Adminse VEYA Kendi antrenmanımsa butonları göster
-    if (currentUserRole === 'admin' || ownerId === currentUserId || (!ownerId && currentUserRole!=='admin')) { // Basitleştirilmiş: Free kullanıcı kendi eklediğini silebilir
+    if (currentUserRole === 'admin' || ownerId === currentUserId || (!ownerId && currentUserRole!=='admin')) { 
         adminActions.style.display = 'flex'; 
     } else { 
         adminActions.style.display = 'none'; 
@@ -338,7 +330,6 @@ async function openStudentDetail(targetUserId, dateToFocus) {
     db.collection('users').doc(targetUserId).collection('workouts').get().then(snap => {
         const studentWorkouts = []; snap.forEach(d => { const dd = d.data(); dd.id = d.id; studentWorkouts.push(dd); });
         renderStudentCalendarWithData(studentWorkouts);
-        // Grafikler (Volume dahil)
         renderCharts('studentRpeChart', 'studentConsistencyChart', studentWorkouts, 'studentVolumeChart');
     });
     if (dateToFocus) { const [y, m, d] = dateToFocus.split('-'); studentYear = parseInt(y); studentMonth = parseInt(m) - 1; setTimeout(() => clickStudentDate(dateToFocus), 600); }
@@ -397,7 +388,7 @@ function closeAddModal() { document.getElementById('modal-overlay').style.displa
 
 function saveRaceFromModal() {
     const name = document.getElementById('modalRaceName').value; const cat = document.getElementById('modalRaceCat').value; const type = document.getElementById('modalRaceType').value;
-    const web = document.getElementById('modalRaceWeb').value; // YENİ
+    const web = document.getElementById('modalRaceWeb').value;
     if (!name) return alert("İsim giriniz");
     db.collection('races').add({ name: name, category: cat, date: selectedFullDate, type: type, website: web, createdAt: new Date() }).then(closeAddModal);
 }
@@ -461,7 +452,6 @@ function showDayDetails(dateStr) {
             let deleteBtn = ''; if (currentUserRole === 'admin') deleteBtn = `<button class="btn-delete" onclick="deleteRace('${race.id}')">🗑️</button>`;
             const isAdded = myRaces.some(r => r.raceId === race.id); const btnText = isAdded ? "✓" : "＋"; const btnClass = isAdded ? "btn-target added" : "btn-target";
             const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg';
-            // WEB SITESI LINKI
             let webLink = '';
             if(race.website) {
                 webLink = `<a href="${race.website}" target="_blank" class="btn-link">🌐 WEB</a>`;
@@ -486,14 +476,12 @@ function showDayDetails(dateStr) {
     if (html === '') html = '<p style="color:gray; font-size:12px; margin-top:10px;">Etkinlik yok.</p>';
     document.getElementById('selected-day-races').innerHTML = html;
     
-    // YENİ: FREE KULLANICIYA ANTRENMAN EKLE BUTONU (Kendi takviminde)
     const actionContainer = document.getElementById('day-action-buttons');
     if(actionContainer) {
         let btnHtml = '';
         if (currentUserRole === 'admin') {
             btnHtml = `<button id="btnAddRaceToDay" class="btn-primary" onclick="openAddModal()">＋ SİSTEME YARIŞ EKLE</button>`;
         } else if (currentUserId) {
-            // Free kullanıcı da kendine antrenman ekleyebilsin
             btnHtml = `<button class="btn-primary" style="background:#333; border:1px solid #555;" onclick="openWorkoutAssignModal('${dateStr}')">＋ ANTRENMAN EKLE</button>`;
         }
         actionContainer.innerHTML = btnHtml;
