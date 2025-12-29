@@ -1,4 +1,4 @@
-console.log("Checkpoint Collective - Final Master Sürüm (v4.2) 🚀");
+console.log("Checkpoint Collective - Final Sürüm (v4.4 - Genişletilmiş) 🚀");
 
 // ==========================================
 // 1. BAŞLANGIÇ VE AYARLAR
@@ -72,7 +72,13 @@ auth.onAuthStateChanged(async (user) => {
         try {
             const doc = await userRef.get();
             if (!doc.exists) {
-                await userRef.set({ name: user.displayName, email: user.email, photo: user.photoURL, role: 'free', joinedAt: new Date() });
+                await userRef.set({ 
+                    name: user.displayName, 
+                    email: user.email, 
+                    photo: user.photoURL, 
+                    role: 'free', 
+                    joinedAt: new Date() 
+                });
             }
             currentUserRole = doc.data() ? doc.data().role : 'free';
         } catch (e) { console.error(e); }
@@ -157,7 +163,75 @@ function switchView(viewName) {
 }
 
 // ==========================================
-// 3. ARAÇLAR (TOOLS)
+// 3. SMART FEED (SAYAÇ YOK, MOTİVASYON VAR)
+// ==========================================
+
+function updateFeedHeader() {
+    // 1. Selamlama (Saate Göre)
+    const hour = new Date().getHours();
+    let greet = "Merhaba";
+    if(hour < 12) greet = "Günaydın";
+    else if(hour < 18) greet = "Tünaydın";
+    else greet = "İyi Akşamlar";
+    
+    // Kullanıcı adı
+    let name = "Misafir";
+    if(auth.currentUser) name = auth.currentUser.displayName.split(' ')[0]; // Sadece ilk isim
+    
+    document.getElementById('greet-msg').innerText = `${greet}, ${name}!`;
+
+    // 2. Motivasyon Mesajı (Rastgele)
+    const msgs = [
+        "Bugün kendin için bir şey yap.", 
+        "Adım adım hedefe.", 
+        "Koşu senin özgürlüğün.", 
+        "Hareket et, iyi hisset.",
+        "İyi antrenmanlar!",
+        "Bugün harika bir gün."
+    ];
+    const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
+    document.getElementById('greet-stat').innerText = randomMsg;
+}
+
+function loadNews() {
+    db.collection('news').orderBy('date', 'desc').onSnapshot(snapshot => {
+        let html = '';
+        snapshot.forEach(doc => {
+            const data = doc.data();
+            
+            // YOUTUBE KONTROLÜ
+            let contentHtml = `<p>${data.content}</p>`;
+            // Basit Regex: Youtube linki var mı?
+            const ytMatch = data.content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/);
+            
+            if(ytMatch) {
+                // Video ID'sini al
+                let videoId = ytMatch[1];
+                if(videoId.includes('&')) videoId = videoId.split('&')[0]; // Ek parametreleri temizle
+                
+                contentHtml = `
+                    <p>${data.content.replace(ytMatch[0], '')}</p> <div class="video-wrapper">
+                        <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
+                    </div>
+                `;
+            }
+
+            html += `
+            <div class="news-card">
+                <div class="news-img" style="background:${data.color || '#333'}"></div>
+                <div class="news-content">
+                    <div style="font-size:9px; color:var(--orange); font-weight:bold;">${data.tag}</div>
+                    <h4>${data.title}</h4>
+                    <div style="font-size:12px; color:#ccc; margin-top:5px;">${contentHtml}</div>
+                </div>
+            </div>`;
+        });
+        document.getElementById('news-container').innerHTML = html || '<p style="text-align:center; color:gray">Henüz duyuru yok.</p>';
+    });
+}
+
+// ==========================================
+// 4. ARAÇLAR (TOOLS)
 // ==========================================
 
 function calculatePace() {
@@ -190,7 +264,7 @@ function calculateHR() {
 }
 
 // ==========================================
-// 4. GRAFİK SİSTEMİ (AKILLI HACİM DAHİL)
+// 5. GRAFİK SİSTEMİ (AKILLI HACİM DAHİL)
 // ==========================================
 
 // Başlıktan (Örn: "10K Koşu") mesafeyi okuyan fonksiyon
@@ -255,7 +329,7 @@ function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
 }
 
 // ==========================================
-// 5. ANTRENMAN & ŞABLON YÖNETİMİ
+// 6. ANTRENMAN & ŞABLON YÖNETİMİ
 // ==========================================
 
 function loadMyWorkouts(userId) {
@@ -267,6 +341,8 @@ function loadMyWorkouts(userId) {
             if (selectedFullDate) showDayDetails(selectedFullDate); 
             // Grafikleri çiz
             renderCharts('myRpeChart', 'myConsistencyChart', myWorkouts, 'myVolumeChart');
+            // Header güncelle (Günaydın vs.)
+            updateFeedHeader();
         }
         if (activeStudentId === userId) renderStudentCalendar(); 
         if (currentUserRole === 'admin') loadAdminDashboard();
@@ -405,7 +481,7 @@ function submitWorkoutReport() {
 function closeWorkoutViewModal() { document.getElementById('modal-workout-view').style.display = 'none'; openWorkoutId = null; editingWorkoutId = null; }
 
 // ==========================================
-// 6. DASHBOARD & ÖĞRENCİ DETAYI (ADMİN)
+// 7. DASHBOARD & ÖĞRENCİ DETAYI (ADMİN)
 // ==========================================
 
 async function loadAdminDashboard() {
@@ -484,7 +560,7 @@ function changeStudentMonth(dir) { studentMonth += dir; if(studentMonth < 0) { s
 function clickStudentDate(dateStr) { db.collection('users').doc(activeStudentId).collection('workouts').where('date','==',dateStr).get().then(snap=>{ if(!snap.empty){ const d=snap.docs[0]; const w=d.data(); openWorkoutView(d.id, w.title, w.date, w.desc, w.isCompleted, w.stravaLink, activeStudentId, w.reportRpe, w.reportNote); } else { openWorkoutAssignModal(dateStr); } }); }
 
 // ==========================================
-// 7. YARDIMCI FONKSİYONLAR
+// 8. YARDIMCI FONKSİYONLAR (TAKVİM, HABER, USER)
 // ==========================================
 
 function loadUsers() {
@@ -504,13 +580,17 @@ function loadMyRaces() {
         myRaces = []; let h = '';
         snap.forEach(d => {
             const dat = d.data(); myRaces.push({ id: d.id, date: dat.date, raceId: dat.raceId }); const [y, m, da] = dat.date.split('-');
+            
+            // Yarış ikonunu bul
             const mainRace = allRaces.find(r => r.id === dat.raceId);
             const iconFile = (mainRace && mainRace.type === 'trail') ? 'icon-trail.jpg' : 'icon-road.jpg';
+            
             h += `<div class="my-race-item"><div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div><div class="my-race-date"><div class="my-race-day">${da}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${dat.name}</div><div style="font-size:11px; color:#888;">${dat.category}</div></div><button class="btn-delete" onclick="removeFromMyRaces('${d.id}')">×</button></div>`;
         });
         const lc = document.getElementById('my-races-list'); if (lc) lc.innerHTML = h || '<p style="color:gray; font-size:12px;">Henüz hedef yok.</p>'; renderCalendar();
     });
 }
+
 function toggleMyRace(raceId, raceName, raceDate, raceCat, btnElement) { if (!currentUserId) return alert("Giriş yapmalısın."); const existing = myRaces.find(r => r.raceId === raceId); if (existing) { if (confirm("Çıkarmak istiyor musun?")) db.collection('users').doc(currentUserId).collection('my_races').doc(existing.id).delete(); return; } const conflict = myRaces.find(r => r.date === raceDate); if (conflict) return alert("⚠️ Çakışma var!"); db.collection('users').doc(currentUserId).collection('my_races').add({ raceId: raceId, name: raceName, date: raceDate, category: raceCat, addedAt: new Date() }).then(() => alert("Eklendi! 🎯")); }
 function removeFromMyRaces(docId) { if (confirm("Silmek istiyor musun?")) db.collection('users').doc(currentUserId).collection('my_races').doc(docId).delete(); }
 function deleteRace(raceId) { if (confirm("Silmek istiyor musun?")) db.collection('races').doc(raceId).delete(); }
@@ -523,13 +603,6 @@ function saveRaceFromModal() {
     db.collection('races').add({ name: name, category: cat, date: selectedFullDate, type: type, website: web, createdAt: new Date() }).then(closeAddModal);
 }
 
-function loadNews() {
-    db.collection('news').orderBy('date', 'desc').onSnapshot(snapshot => {
-        let html = '';
-        snapshot.forEach(doc => { const data = doc.data(); html += `<div class="news-card"><div class="news-img" style="background:${data.color || '#333'}"></div><div class="news-content"><div style="font-size:9px; color:var(--orange); font-weight:bold;">${data.tag}</div><h4>${data.title}</h4></div></div>`; });
-        document.getElementById('news-container').innerHTML = html || '<p style="text-align:center; color:gray">Haber yok.</p>';
-    });
-}
 function saveNews() { const title = document.getElementById('newsTitle').value; const tag = document.getElementById('newsTag').value; const content = document.getElementById('newsContent').value; if (!title) return alert("Başlık giriniz"); db.collection('news').add({ title: title, tag: tag || 'GENEL', content: content, date: new Date(), color: '#FF6B35' }).then(() => { alert("Haber Yayınlandı!"); switchView('feed'); }); }
 
 function updateUIForUser(user, role) {
@@ -538,6 +611,7 @@ function updateUIForUser(user, role) {
     document.querySelector('#view-locker .profile-header h3').innerText = user.displayName; document.querySelector('#view-locker .profile-header .avatar').style.backgroundImage = `url('${user.photoURL}')`;
     document.querySelector('.login-prompt').style.display = 'none'; document.getElementById('my-races-section').style.display = 'block';
     const statsSection = document.getElementById('my-stats-section'); if (statsSection) statsSection.style.display = 'block';
+    document.getElementById('feed-header-card').style.display = 'flex'; // Feed kartını aç
     if (role === 'admin') {
         document.querySelector('.role-badge').innerText = "YÖNETİCİ"; document.querySelector('.role-badge').style.background = "#D32F2F";
         if (!document.getElementById('btnAdmin')) { const btn = document.createElement('button'); btn.id = 'btnAdmin'; btn.innerHTML = "⚡ YÖNETİCİ PANELİ"; btn.className = "btn-primary"; btn.style.marginTop = "15px"; btn.style.background = "#D32F2F"; btn.onclick = () => switchView('admin'); document.querySelector('#view-locker .profile-header').appendChild(btn); }
@@ -550,13 +624,14 @@ function updateUIForGuest() {
     if (profileTrigger) { profileTrigger.classList.remove('active'); profileTrigger.innerHTML = `<span class="material-icons-round guest-icon">person_outline</span>`; }
     document.querySelector('#view-locker .profile-header h3').innerText = "Misafir Kullanıcı"; document.querySelector('.login-prompt').style.display = 'block'; document.getElementById('my-races-section').style.display = 'none';
     const statsSection = document.getElementById('my-stats-section'); if (statsSection) statsSection.style.display = 'none';
+    document.getElementById('feed-header-card').style.display = 'none'; // Feed kartını gizle
     if (document.getElementById('btnAdmin')) document.getElementById('btnAdmin').remove(); if (document.getElementById('btnLogout')) document.getElementById('btnLogout').remove();
 }
 
 function loadRaces() { db.collection('races').orderBy('date', 'asc').onSnapshot(snapshot => { allRaces = []; snapshot.forEach(doc => { const d = doc.data(); d.id = doc.id; allRaces.push(d); }); renderCalendar(); if (!selectedFullDate) showUpcomingRaces(); else showDayDetails(selectedFullDate); }); }
 
 function renderCalendar() {
-    const calendarEl = document.getElementById('calendar-days'); if(!calendarEl) return;
+    const el=document.getElementById('calendar-days'); if(!el) return;
     const monthNames = ["Ocak", "Şubat", "Mart", "Nisan", "Mayıs", "Haziran", "Temmuz", "Ağustos", "Eylül", "Ekim", "Kasım", "Aralık"];
     document.getElementById('currentMonthLabel').innerText = `${monthNames[currentMonth]} ${currentYear}`;
     const firstDay = new Date(currentYear, currentMonth, 1).getDay(); const startDay = firstDay === 0 ? 6 : firstDay - 1; const daysInMonth = new Date(currentYear, currentMonth + 1, 0).getDate();
@@ -566,21 +641,17 @@ function renderCalendar() {
     for (let day = 1; day <= daysInMonth; day++) {
         const monthStr = (currentMonth + 1).toString().padStart(2, '0'); const dayStr = day.toString().padStart(2, '0'); const fullDate = `${currentYear}-${monthStr}-${dayStr}`;
         const race = allRaces.find(r => r.date === fullDate); const hasMyRace = myRaces.some(r => r.date === fullDate); const workout = myWorkouts.find(w => w.date === fullDate);
-        
         let workoutClass = ''; if (workout) workoutClass = workout.isCompleted ? 'has-workout completed' : 'has-workout';
         let classes = workoutClass; if (hasMyRace) classes += ' has-my-race'; else if (race) classes += ' has-race';
-        
         let iconHtml = '';
         if (race) {
             const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg';
             iconHtml = `<img src="${iconFile}" class="race-type-icon-small">`;
         }
-
-        const todayClass = (new Date().toISOString().slice(0, 10) === fullDate) ? 'today' : '';
-        const selectedClass = (selectedFullDate === fullDate) ? 'selected' : '';
+        const todayClass = (new Date().toISOString().slice(0, 10) === fullDate) ? 'today' : ''; const selectedClass = (selectedFullDate === fullDate) ? 'selected' : '';
         html += `<div class="day-cell ${classes} ${todayClass} ${selectedClass}" onclick="selectDate('${fullDate}', this)">${day} ${iconHtml}</div>`;
     }
-    calendarEl.innerHTML = html;
+    el.innerHTML = html;
 }
 
 function changeMonth(dir) { currentMonth += dir; if (currentMonth < 0) { currentMonth = 11; currentYear--; } else if (currentMonth > 11) { currentMonth = 0; currentYear++; } renderCalendar(); }
@@ -606,8 +677,7 @@ function showDayDetails(dateStr) {
             let deleteBtn = ''; if (currentUserRole === 'admin') deleteBtn = `<button class="btn-delete" onclick="deleteRace('${race.id}')">🗑️</button>`;
             const isAdded = myRaces.some(r => r.raceId === race.id); const btnText = isAdded ? "✓" : "＋"; const btnClass = isAdded ? "btn-target added" : "btn-target";
             const iconFile = race.type === 'trail' ? 'icon-trail.jpg' : 'icon-road.jpg';
-            let webLink = '';
-            if(race.website) { webLink = `<a href="${race.website}" target="_blank" class="btn-link">🌐 WEB</a>`; }
+            let webLink = ''; if(race.website) { webLink = `<a href="${race.website}" target="_blank" class="btn-link">🌐 WEB</a>`; }
             html += `<div class="race-mini-card"><div style="margin-right:10px;"><img src="${iconFile}" class="race-type-icon"></div><div style="flex:1;"><div style="font-weight:bold;">${race.name}</div><div style="font-size:11px; color:gray;">${race.category}</div></div><div style="display:flex; align-items:center; gap:5px;">${webLink}<button class="${btnClass}" onclick="toggleMyRace('${race.id}', '${race.name}', '${race.date}', '${race.category}', this)">${btnText}</button>${deleteBtn}</div></div>`;
         });
     }

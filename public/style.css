@@ -362,3 +362,78 @@ canvas {
     color: rgba(255,255,255,0.3);
     text-transform: uppercase;
 }
+/* ... Eski stiller aynı ... */
+
+/* FEED KARŞILAMA KARTI */
+.feed-welcome-card {
+    background: linear-gradient(135deg, #FF6B35 0%, #d43f00 100%);
+    border-radius: 16px;
+    padding: 20px;
+    color: white;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 20px;
+    box-shadow: 0 4px 15px rgba(255, 107, 53, 0.3);
+}
+
+.welcome-text h2 {
+    margin: 0;
+    font-size: 24px;
+    font-family: 'Bebas Neue', sans-serif;
+    letter-spacing: 1px;
+}
+
+.welcome-text p {
+    margin: 5px 0 0 0;
+    font-size: 12px;
+    opacity: 0.9;
+}
+
+/* INSTAGRAM BUTONU (KUTUSU) */
+.instagram-box {
+    background: rgba(255, 255, 255, 0.2); /* Yarı saydam beyaz */
+    padding: 10px 15px;
+    border-radius: 12px;
+    text-align: center;
+    text-decoration: none;
+    color: white;
+    transition: transform 0.2s;
+    backdrop-filter: blur(5px);
+    border: 1px solid rgba(255,255,255,0.3);
+}
+
+.instagram-box:active {
+    transform: scale(0.95);
+}
+
+.insta-icon {
+    font-size: 20px;
+    margin-bottom: 2px;
+}
+
+.insta-label {
+    font-size: 9px;
+    font-weight: 800;
+    letter-spacing: 1px;
+}
+
+/* VİDEO KAPLAYICI */
+.video-wrapper {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 8px;
+    margin-top: 10px;
+    background: black;
+}
+
+.video-wrapper iframe {
+    position: absolute;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    border: 0;
+}

@@ -24,7 +24,6 @@
                 <h1 class="landing-title">CHECKPOINT<br><span class="accent">COLLECTIVE</span></h1>
                 <p class="landing-slogan">KOŞU YOLCULUĞUNU BAŞLAT</p>
             </div>
-            
             <div class="landing-actions">
                 <button onclick="loginWithGoogle()" class="btn-primary btn-landing-login">
                     <img src="https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg" width="18" style="margin-right:10px;">
@@ -48,7 +47,21 @@
     <div id="main-container">
         
         <div id="view-feed" class="view">
-            <div id="news-container"><p style="text-align:center; color:gray; margin-top:20px;">Haberler yükleniyor...</p></div>
+            <div id="feed-header-card" class="feed-welcome-card" style="display:none;">
+                <div class="welcome-text">
+                    <h2 id="greet-msg">Merhaba</h2>
+                    <p id="greet-stat">İyi antrenmanlar!</p>
+                </div>
+                <a href="https://www.instagram.com/checkpointcollective/" target="_blank" class="instagram-box">
+                    <div class="insta-icon">📸</div>
+                    <div class="insta-label">INSTAGRAM</div>
+                </a>
+            </div>
+
+            <h3 style="margin: 20px 0 10px 0; font-size:14px; color:var(--gray); letter-spacing:1px;">PANOLAR & DUYURULAR</h3>
+            <div id="news-container">
+                <p style="text-align:center; color:gray; margin-top:20px;">Akış yenileniyor...</p>
+            </div>
         </div>
 
         <div id="view-discover" class="view">
@@ -89,7 +102,6 @@
 
         <div id="view-locker" class="view">
             <div class="profile-header"><div class="avatar"></div><h3>Misafir Kullanıcı</h3><span class="role-badge">Giriş Yapılmadı</span></div>
-            
             <div id="my-stats-section" style="display:none;">
                 <div class="charts-row"><div class="chart-card"><h4>🔥 Efor Eğrisi</h4><canvas id="myRpeChart"></canvas></div></div>
                 <div class="charts-row">
@@ -97,12 +109,6 @@
                     <div class="chart-card half"><h4>💎 Devamlılık</h4><canvas id="myConsistencyChart"></canvas></div>
                 </div>
             </div>
-
-            <div class="login-prompt card" style="display:none;">
-                <p>Verilerini görmek için giriş yapmalısın.</p>
-                <button onclick="loginWithGoogle()" class="btn-primary">GOOGLE İLE GİRİŞ YAP</button>
-            </div>
-
             <div id="my-races-section" style="display:none;"><h4 style="margin: 20px 0 10px 0; font-size: 14px; color: var(--orange); letter-spacing: 1px;">YARIŞ TAKVİMİM</h4><div id="my-races-list"></div></div>
         </div>
 
