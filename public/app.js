@@ -1,10 +1,10 @@
-console.log("Checkpoint Collective - Final Master Sürüm (v3.0) 🚀");
+console.log("Checkpoint Collective - Master Sürüm (Faz 1+2+3) 🚀");
 
 // ==========================================
 // 1. BAŞLANGIÇ VE AYARLAR
 // ==========================================
 
-// Splash Ekranı (Açılış)
+// Splash Ekranı (Açılış Animasyonu)
 document.addEventListener('DOMContentLoaded', () => {
     setTimeout(() => {
         const splash = document.getElementById('splash-screen');
@@ -29,6 +29,7 @@ let selectedFullDate = null;
 let allRaces = [];      // Tüm yarışlar
 let myRaces = [];       // Benim hedef yarışlarım
 let myWorkouts = [];    // Benim antrenmanlarım (veya bakılan öğrencinin)
+let workoutTemplates = []; // YENİ: Antrenman Şablonları
 
 // Kullanıcı Durumu
 let currentUserRole = 'free';
@@ -90,6 +91,7 @@ auth.onAuthStateChanged(async (user) => {
         if(currentUserRole === 'admin') {
             loadUsers(); // Öğrenci listesi
             loadAdminDashboard(); // Dashboard verileri
+            loadTemplates(); // Şablon kütüphanesi
         }
 
     } else {
@@ -98,6 +100,7 @@ auth.onAuthStateChanged(async (user) => {
         currentUserRole = 'free';
         myRaces = [];
         myWorkouts = [];
+        workoutTemplates = [];
         activeStudentId = null;
         updateUIForGuest();
     }
@@ -188,7 +191,40 @@ async function loadAdminDashboard() {
 }
 
 // ==========================================
-// 4. ANTRENMAN YÖNETİMİ (CRUD & RPE)
+// 4. ŞABLON SİSTEMİ (YENİ FAZ 3)
+// ==========================================
+
+function loadTemplates() {
+    db.collection('templates').orderBy('title', 'asc').onSnapshot(snap => {
+        workoutTemplates = [];
+        let html = '<option value="">📂 Şablondan Yükle...</option>';
+        
+        snap.forEach(doc => {
+            const t = doc.data();
+            workoutTemplates.push({ id: doc.id, ...t });
+            html += `<option value="${doc.id}">${t.title}</option>`;
+        });
+        
+        const selector = document.getElementById('templateSelector');
+        if(selector) selector.innerHTML = html;
+    });
+}
+
+function loadTemplateToInputs() {
+    const selector = document.getElementById('templateSelector');
+    const selectedId = selector.value;
+    
+    if(!selectedId) return; 
+    
+    const template = workoutTemplates.find(t => t.id === selectedId);
+    if(template) {
+        document.getElementById('workoutTitle').value = template.title;
+        document.getElementById('workoutDesc').value = template.desc;
+    }
+}
+
+// ==========================================
+// 5. ANTRENMAN YÖNETİMİ (CRUD & RPE)
 // ==========================================
 
 // Antrenmanları Veritabanından Yükle
@@ -222,10 +258,18 @@ function openWorkoutAssignModal(dateStr) {
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr;
     document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr; 
     
+    // Formu temizle
     document.getElementById('workoutTitle').value = '';
     document.getElementById('workoutDesc').value = '';
     document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ";
     
+    // Şablon checkboxını sıfırla ve göster
+    const chk = document.getElementById('saveAsTemplate');
+    if(chk) { chk.checked = false; chk.parentElement.style.display = 'flex'; } 
+    
+    // Şablon seçiciyi sıfırla
+    if(document.getElementById('templateSelector')) document.getElementById('templateSelector').value = "";
+
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
@@ -248,6 +292,11 @@ function editWorkout() {
     document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE";
 
     editingWorkoutId = openWorkoutId; // Düzenleme modu
+    
+    // Düzenlerken şablon olarak kaydetmeyi gizle
+    const chk = document.getElementById('saveAsTemplate');
+    if(chk) chk.parentElement.style.display = 'none';
+
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
@@ -263,6 +312,10 @@ function saveWorkout() {
     const dateStr = document.getElementById('modalWorkoutDateLabel').dataset.date;
     const title = document.getElementById('workoutTitle').value;
     const desc = document.getElementById('workoutDesc').value;
+    
+    // Checkbox elementini güvenli seç
+    const chk = document.getElementById('saveAsTemplate');
+    const saveAsTemplate = chk ? chk.checked : false;
 
     if(!title) return alert("Lütfen bir başlık giriniz.");
 
@@ -275,7 +328,6 @@ function saveWorkout() {
             desc: desc
         }).then(() => {
             closeWorkoutModal();
-            // Alert vermeye gerek yok, otomatik kapanır
         });
     } else {
         // YENİ KAYIT
@@ -290,6 +342,14 @@ function saveWorkout() {
             reportRpe: 0, 
             reportNote: ""
         }).then(() => { 
+            // Eğer kutucuk işaretliyse Şablonlara da ekle
+            if(saveAsTemplate) {
+                db.collection('templates').add({
+                    title: title,
+                    desc: desc,
+                    createdAt: new Date()
+                });
+            }
             closeWorkoutModal(); 
             alert("Antrenman Öğrenciye Gönderildi! 📨"); 
         });
@@ -353,9 +413,6 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
         // --- YAPILMAMIŞ: TAMAMLA BUTONU ---
         displayDiv.style.display = 'none';
         formDiv.style.display = 'none';
-        
-        // Eğer kullanıcı kendi antrenmanına bakıyorsa veya Admin ise
-        // Şimdilik herkes tamamla butonunu görsün (test için)
         btnOpen.style.display = 'block';
         
         // Formu temizle
@@ -406,8 +463,9 @@ function closeWorkoutViewModal() {
     editingWorkoutId = null;
 }
 
+
 // ==========================================
-// 5. TAKVİM VE YARIŞLAR (ANA EKRAN)
+// 6. TAKVİM VE YARIŞLAR (ANA EKRAN)
 // ==========================================
 
 function loadRaces() {
@@ -607,7 +665,7 @@ function showUpcomingRaces() {
 }
 
 // ==========================================
-// 6. ÖĞRENCİ DETAYI ve TAKVİMİ
+// 7. ÖĞRENCİ DETAYI ve TAKVİMİ
 // ==========================================
 
 async function openStudentDetail(targetUserId, dateToFocus) {
@@ -712,7 +770,7 @@ function clickStudentDate(dateStr) {
 }
 
 // ==========================================
-// 7. GENEL YARDIMCI FONKSİYONLAR
+// 8. GENEL YARDIMCI FONKSİYONLAR
 // ==========================================
 
 function loadUsers() {

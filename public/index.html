@@ -26,7 +26,6 @@
     </div>
 
     <div id="main-container">
-        
         <div id="view-feed" class="view active">
             <div id="news-container"><p style="text-align:center; color:gray; margin-top:20px;">Haberler yükleniyor...</p></div>
         </div>
@@ -56,11 +55,7 @@
 
         <div id="view-admin" class="view">
             <h2 class="page-title" style="color:var(--orange)">YÖNETİCİ</h2>
-            
-            <div id="admin-dashboard-container">
-                <p style="text-align:center; font-size:12px; color:gray;">Analiz yapılıyor...</p>
-            </div>
-
+            <div id="admin-dashboard-container"><p style="text-align:center; font-size:12px; color:gray;">Analiz yapılıyor...</p></div>
             <div class="card"><h3>📢 Haber Ekle</h3><input type="text" id="newsTitle" placeholder="Başlık" class="input-field"><input type="text" id="newsTag" placeholder="Etiket" class="input-field"><textarea id="newsContent" placeholder="İçerik" class="input-field" rows="2"></textarea><button onclick="saveNews()" class="btn-primary">YAYINLA</button></div>
             <div class="card" style="border: 1px solid #4a90e2;"><h3 style="color:#4a90e2">👥 Öğrenciler</h3><div id="user-list-container"><p>Yükleniyor...</p></div></div>
             <button onclick="switchView('locker')" class="btn-secondary">🔙 Dön</button>
@@ -79,7 +74,25 @@
     </div>
 
     <div id="modal-workout-assign" class="modal-overlay">
-        <div class="modal-card" style="border-color:#4a90e2;"><h3 style="color:#4a90e2">🏋️ ANTRENMAN YAZ</h3><p id="modalWorkoutDateLabel" style="color:gray; font-size:12px; margin-bottom:15px;">...</p><input type="text" id="workoutTitle" placeholder="Başlık" class="input-field"><textarea id="workoutDesc" placeholder="Detay" class="input-field" rows="3"></textarea><button onclick="saveWorkout()" class="btn-primary" style="background:#4a90e2;">GÖNDER</button><button onclick="closeWorkoutModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button></div>
+        <div class="modal-card" style="border-color:#4a90e2;">
+            <h3 style="color:#4a90e2">🏋️ ANTRENMAN YAZ</h3>
+            <p id="modalWorkoutDateLabel" style="color:gray; font-size:12px; margin-bottom:10px;">...</p>
+            
+            <select id="templateSelector" class="input-field" onchange="loadTemplateToInputs()" style="margin-bottom:10px; color:#4a90e2; font-weight:bold;">
+                <option value="">📂 Şablondan Yükle...</option>
+                </select>
+
+            <input type="text" id="workoutTitle" placeholder="Başlık (Örn: Sabah Koşusu)" class="input-field">
+            <textarea id="workoutDesc" placeholder="Detay (Örn: 5K, Nabız 140)" class="input-field" rows="3"></textarea>
+            
+            <div style="display:flex; align-items:center; margin-bottom:15px; justify-content:flex-start;">
+                <input type="checkbox" id="saveAsTemplate" style="margin-right:8px; width:16px; height:16px;">
+                <label for="saveAsTemplate" style="font-size:12px; color:gray;">Kütüphaneye şablon olarak kaydet</label>
+            </div>
+
+            <button onclick="saveWorkout()" class="btn-primary" style="background:#4a90e2;">GÖNDER</button>
+            <button onclick="closeWorkoutModal()" class="btn-secondary" style="border:none; color:#ff4444;">İPTAL</button>
+        </div>
     </div>
 
     <div id="modal-workout-view" class="modal-overlay">
