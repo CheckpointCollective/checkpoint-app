@@ -1,11 +1,8 @@
-console.log("Checkpoint Collective - Final Tam Sürüm (v4.5 - Full) 🚀");
+console.log("Checkpoint Collective - Final Sürüm (v4.6 - Safety Net) 🚀");
 
 // ==========================================
 // 1. BAŞLANGIÇ VE AYARLAR
 // ==========================================
-
-// NOT: Splash Screen (Logo) zamanlayıcısı iptal edildi.
-// Logo artık Firebase verisi yüklenip sayfa hazır olunca kaldırılacak (Bkz: Bölüm 2)
 
 firebase.initializeApp(firebaseConfig);
 const auth = firebase.auth();
@@ -16,17 +13,14 @@ let currentYear = new Date().getFullYear();
 let currentMonth = new Date().getMonth();
 let selectedFullDate = null;
 
-// Veri Listeleri
 let allRaces = [];      
 let myRaces = [];       
 let myWorkouts = [];    
 let workoutTemplates = []; 
 
-// Kullanıcı Durumu
 let currentUserRole = 'free';
 let currentUserId = null;
 
-// Koçluk / Admin Değişkenleri
 let activeStudentId = null; 
 let studentYear = new Date().getFullYear();
 let studentMonth = new Date().getMonth();
@@ -35,11 +29,10 @@ let selectedRpe = 0;
 let editingWorkoutId = null; 
 let openWorkoutId = null;    
 
-// Grafik Referansları
 let chartInstances = {};
 
 // ==========================================
-// 2. GİRİŞ VE YÖNLENDİRME (DÜZELTİLMİŞ LOGIC)
+// 2. GİRİŞ VE YÖNLENDİRME
 // ==========================================
 
 // Yardımcı: Logoyu ekrandan kaldır
@@ -62,6 +55,9 @@ function enterAsGuest() {
 
 // Ana Yetkilendirme Döngüsü
 auth.onAuthStateChanged(async (user) => {
+    // Firebase cevap verdi, logoyu kaldırabiliriz
+    hideSplashScreen(); 
+
     if (user) {
         // --- KULLANICI GİRİŞ YAPMIŞ ---
         currentUserId = user.uid;
@@ -70,13 +66,7 @@ auth.onAuthStateChanged(async (user) => {
         try {
             const doc = await userRef.get();
             if (!doc.exists) {
-                await userRef.set({ 
-                    name: user.displayName, 
-                    email: user.email, 
-                    photo: user.photoURL, 
-                    role: 'free', 
-                    joinedAt: new Date() 
-                });
+                await userRef.set({ name: user.displayName, email: user.email, photo: user.photoURL, role: 'free', joinedAt: new Date() });
             }
             currentUserRole = doc.data() ? doc.data().role : 'free';
         } catch (e) { console.error(e); }
@@ -85,52 +75,30 @@ auth.onAuthStateChanged(async (user) => {
         loadMyRaces(); 
         loadMyWorkouts(currentUserId); 
         
-        if (currentUserRole === 'admin') { 
-            loadUsers(); 
-            loadAdminDashboard(); 
-            loadTemplates(); 
-        }
+        if (currentUserRole === 'admin') { loadUsers(); loadAdminDashboard(); loadTemplates(); }
         
-        // Önce sayfayı aç, sonra logoyu kaldır (Beyaz ekranı önler)
         switchView('feed');
-        hideSplashScreen();
 
     } else {
-        // --- ÇIKIŞ YAPILMIŞ / MİSAFİR ---
-        currentUserId = null; 
-        currentUserRole = 'free';
-        
-        // Verileri temizle
-        myRaces = []; 
-        myWorkouts = []; 
-        workoutTemplates = []; 
-        activeStudentId = null;
-        
+        // --- MİSAFİR ---
+        currentUserId = null; currentUserRole = 'free';
+        myRaces = []; myWorkouts = []; workoutTemplates = []; activeStudentId = null;
         updateUIForGuest();
         
-        // Landing sayfasını aç, sonra logoyu kaldır
         switchView('landing');
-        hideSplashScreen();
     }
     
-    // Herkesin görebileceği veriler
-    loadNews(); 
-    loadRaces();
+    loadNews(); loadRaces();
 });
 
-// UI Yönlendirme ve Menü Gizleme/Açma
+// UI Yönlendirme
 function switchView(viewName) {
-    // 1. Tüm sayfaları gizle
     document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
-    
-    // 2. Alt menü aktifliğini temizle
     document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
     
-    // 3. Hedef sayfayı aç
     const target = document.getElementById('view-' + viewName);
     if(target) target.classList.add('active');
 
-    // 4. Header ve Footer Kontrolü (Landing'de gizle)
     const header = document.getElementById('main-header');
     const bottomNav = document.getElementById('bottom-nav-bar');
 
@@ -142,16 +110,9 @@ function switchView(viewName) {
         if(bottomNav) bottomNav.style.display = 'flex';
     }
 
-    // 5. Sayfa özel temizlikleri
     if (viewName === 'admin') { activeStudentId = null; }
-    if (viewName === 'discover') { 
-        selectedFullDate = null; 
-        document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); 
-        renderCalendar(); 
-        showUpcomingRaces(); 
-    }
+    if (viewName === 'discover') { selectedFullDate = null; document.querySelectorAll('.day-cell').forEach(el => el.classList.remove('selected')); renderCalendar(); showUpcomingRaces(); }
     
-    // 6. Alt menü ikonunu yak
     const map = { 'feed': 0, 'discover': 1, 'tools': 2, 'locker': 3 }; 
     if (map[viewName] !== undefined && bottomNav) {
         document.querySelectorAll('.nav-item')[map[viewName]].classList.add('active');
@@ -159,37 +120,22 @@ function switchView(viewName) {
 }
 
 // ==========================================
-// 3. SMART FEED (SAYAÇ YOK, INSTAGRAM & MOTİVASYON VAR)
+// 3. İÇERİK YÖNETİMİ
 // ==========================================
 
 function updateFeedHeader() {
-    // 1. Selamlama (Saate Göre)
     const hour = new Date().getHours();
     let greet = "Merhaba";
-    if(hour < 12) greet = "Günaydın";
-    else if(hour < 18) greet = "Tünaydın";
-    else greet = "İyi Akşamlar";
-    
+    if(hour < 12) greet = "Günaydın"; else if(hour < 18) greet = "Tünaydın"; else greet = "İyi Akşamlar";
     let name = "Misafir";
     if(auth.currentUser) name = auth.currentUser.displayName.split(' ')[0];
     
-    // Element varsa güncelle
     const greetMsg = document.getElementById('greet-msg');
     const greetStat = document.getElementById('greet-stat');
-
     if(greetMsg) greetMsg.innerText = `${greet}, ${name}!`;
-    
     if(greetStat) {
-        const msgs = [
-            "Bugün kendin için bir şey yap.", 
-            "Adım adım hedefe.", 
-            "Koşu senin özgürlüğün.", 
-            "Hareket et, iyi hisset.",
-            "İyi antrenmanlar!",
-            "Bugün harika bir gün."
-        ];
-        const randomMsg = msgs[Math.floor(Math.random() * msgs.length)];
-        greetStat.innerText = randomMsg;
+        const msgs = ["Bugün kendin için bir şey yap.", "Adım adım hedefe.", "Koşu senin özgürlüğün.", "İyi antrenmanlar!", "Bugün harika bir gün."];
+        greetStat.innerText = msgs[Math.floor(Math.random() * msgs.length)];
     }
 }
 
@@ -198,52 +144,28 @@ function loadNews() {
         let html = '';
         snapshot.forEach(doc => {
             const data = doc.data();
-            
-            // YOUTUBE VİDEO KONTROLÜ
             let contentHtml = `<p>${data.content}</p>`;
-            // Basit Regex: Youtube linki var mı?
             const ytMatch = data.content.match(/(?:https?:\/\/)?(?:www\.)?(?:youtube\.com|youtu\.be)\/(?:watch\?v=)?(.+)/);
-            
             if(ytMatch) {
                 let videoId = ytMatch[1];
                 if(videoId.includes('&')) videoId = videoId.split('&')[0];
-                
-                contentHtml = `
-                    <p>${data.content.replace(ytMatch[0], '')}</p> 
-                    <div class="video-wrapper">
-                        <iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe>
-                    </div>
-                `;
+                contentHtml = `<p>${data.content.replace(ytMatch[0], '')}</p><div class="video-wrapper"><iframe src="https://www.youtube.com/embed/${videoId}" allowfullscreen></iframe></div>`;
             }
-
-            html += `
-            <div class="news-card">
-                <div class="news-img" style="background:${data.color || '#333'}"></div>
-                <div class="news-content">
-                    <div style="font-size:9px; color:var(--orange); font-weight:bold;">${data.tag}</div>
-                    <h4>${data.title}</h4>
-                    <div style="font-size:12px; color:#ccc; margin-top:5px;">${contentHtml}</div>
-                </div>
-            </div>`;
+            html += `<div class="news-card"><div class="news-img" style="background:${data.color || '#333'}"></div><div class="news-content"><div style="font-size:9px; color:var(--orange); font-weight:bold;">${data.tag}</div><h4>${data.title}</h4><div style="font-size:12px; color:#ccc; margin-top:5px;">${contentHtml}</div></div></div>`;
         });
         document.getElementById('news-container').innerHTML = html || '<p style="text-align:center; color:gray">Henüz duyuru yok.</p>';
     });
 }
 
 // ==========================================
-// 4. ARAÇLAR (TOOLS)
+// 4. ARAÇLAR VE GRAFİKLER
 // ==========================================
 
 function calculatePace() {
     const dist = parseFloat(document.getElementById('toolDist').value);
     const time = parseFloat(document.getElementById('toolTime').value);
     if (!dist || !time) return;
-    
-    const paceDec = time / dist; 
-    const paceMin = Math.floor(paceDec);
-    const paceSec = Math.round((paceDec - paceMin) * 60);
-    const secStr = paceSec < 10 ? '0' + paceSec : paceSec;
-    
+    const paceDec = time / dist; const paceMin = Math.floor(paceDec); const paceSec = Math.round((paceDec - paceMin) * 60); const secStr = paceSec < 10 ? '0' + paceSec : paceSec;
     document.getElementById('resultPace').innerText = `Ortalama Pace: ${paceMin}:${secStr} /km`;
 }
 
@@ -251,83 +173,45 @@ function calculateHR() {
     const age = parseFloat(document.getElementById('toolAge').value);
     if (!age) return;
     const maxHR = 220 - age;
-    const z2_min = Math.round(maxHR * 0.60);
-    const z2_max = Math.round(maxHR * 0.70);
-    const z4_min = Math.round(maxHR * 0.80);
-    const z4_max = Math.round(maxHR * 0.90);
-    
-    document.getElementById('resultHR').innerHTML = `
-        <strong>Maksimum Nabız:</strong> ${maxHR}<br>
-        <span style="color:#4ECDC4">Zone 2 (Yağ Yakımı):</span> ${z2_min} - ${z2_max}<br>
-        <span style="color:#FF6B35">Zone 4 (Laktat Eşiği):</span> ${z4_min} - ${z4_max}
-    `;
+    const z2_min = Math.round(maxHR * 0.60); const z2_max = Math.round(maxHR * 0.70);
+    const z4_min = Math.round(maxHR * 0.80); const z4_max = Math.round(maxHR * 0.90);
+    document.getElementById('resultHR').innerHTML = `<strong>Maksimum Nabız:</strong> ${maxHR}<br><span style="color:#4ECDC4">Zone 2 (Yağ Yakımı):</span> ${z2_min} - ${z2_max}<br><span style="color:#FF6B35">Zone 4 (Laktat Eşiği):</span> ${z4_min} - ${z4_max}`;
 }
-
-// ==========================================
-// 5. GRAFİK SİSTEMİ (AKILLI HACİM DAHİL)
-// ==========================================
 
 function calculateVolumeFromTitle(title) {
     if(!title) return 0;
     const match = title.match(/(\d+(?:\.\d+)?)\s*(k|km|m)/i);
-    if (match) {
-        let val = parseFloat(match[1]);
-        if (match[2].toLowerCase() === 'm') val = val / 1000;
-        return val;
-    }
-    return 0;
+    if (match) { let val = parseFloat(match[1]); if (match[2].toLowerCase() === 'm') val = val / 1000; return val; } return 0;
 }
 
 function renderCharts(canvasRpeId, canvasPieId, workouts, canvasVolId) {
     const completedWorkouts = workouts.filter(w => w.isCompleted).sort((a, b) => a.date.localeCompare(b.date)).slice(-10);
-    
     const rpeLabels = completedWorkouts.map(w => w.date.slice(5));
     const rpeData = completedWorkouts.map(w => w.reportRpe || 0);
-    
-    const totalAssigned = workouts.length;
-    const totalCompleted = workouts.filter(w => w.isCompleted).length;
-    const notDone = totalAssigned - totalCompleted;
-    
+    const totalAssigned = workouts.length; const totalCompleted = workouts.filter(w => w.isCompleted).length; const notDone = totalAssigned - totalCompleted;
     const volumeData = completedWorkouts.map(w => calculateVolumeFromTitle(w.title));
 
-    // CHART 1: EFOR
     const ctxRpe = document.getElementById(canvasRpeId);
     if (ctxRpe) {
         if (chartInstances[canvasRpeId]) chartInstances[canvasRpeId].destroy();
-        chartInstances[canvasRpeId] = new Chart(ctxRpe, {
-            type: 'line',
-            data: { labels: rpeLabels, datasets: [{ label: 'Efor', data: rpeData, borderColor: '#FF6B35', backgroundColor: 'rgba(255, 107, 53, 0.1)', borderWidth: 2, tension: 0.3 }] },
-            options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 10, grid: { color:'rgba(255,255,255,0.1)' } }, x: { display: false } } }
-        });
+        chartInstances[canvasRpeId] = new Chart(ctxRpe, { type: 'line', data: { labels: rpeLabels, datasets: [{ label: 'Efor', data: rpeData, borderColor: '#FF6B35', backgroundColor: 'rgba(255, 107, 53, 0.1)', borderWidth: 2, tension: 0.3 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, max: 10, grid: { color:'rgba(255,255,255,0.1)' } }, x: { display: false } } } });
     }
-
-    // CHART 2: DEVAMLILIK
     const ctxPie = document.getElementById(canvasPieId);
     if (ctxPie) {
         if (chartInstances[canvasPieId]) chartInstances[canvasPieId].destroy();
-        chartInstances[canvasPieId] = new Chart(ctxPie, {
-            type: 'doughnut',
-            data: { labels: ['Yapıldı', 'Eksik'], datasets: [{ data: [totalCompleted, notDone], backgroundColor: ['#4ECDC4', '#333'], borderWidth: 0 }] },
-            options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } }
-        });
+        chartInstances[canvasPieId] = new Chart(ctxPie, { type: 'doughnut', data: { labels: ['Yapıldı', 'Eksik'], datasets: [{ data: [totalCompleted, notDone], backgroundColor: ['#4ECDC4', '#333'], borderWidth: 0 }] }, options: { responsive: true, cutout: '70%', plugins: { legend: { display: false } } } });
     }
-
-    // CHART 3: HACİM
     if(canvasVolId) {
         const ctxVol = document.getElementById(canvasVolId);
         if (ctxVol) {
             if (chartInstances[canvasVolId]) chartInstances[canvasVolId].destroy();
-            chartInstances[canvasVolId] = new Chart(ctxVol, {
-                type: 'bar',
-                data: { labels: rpeLabels, datasets: [{ label: 'KM', data: volumeData, backgroundColor: '#4a90e2', borderRadius: 4 }] },
-                options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.1)' } }, x: { display: false } } }
-            });
+            chartInstances[canvasVolId] = new Chart(ctxVol, { type: 'bar', data: { labels: rpeLabels, datasets: [{ label: 'KM', data: volumeData, backgroundColor: '#4a90e2', borderRadius: 4 }] }, options: { responsive: true, plugins: { legend: { display: false } }, scales: { y: { beginAtZero: true, grid: { color:'rgba(255,255,255,0.1)' } }, x: { display: false } } } });
         }
     }
 }
 
 // ==========================================
-// 6. ANTRENMAN & ŞABLON YÖNETİMİ
+// 5. FONKSİYONLAR (TAKVİM, KAYIT, VS.)
 // ==========================================
 
 function loadMyWorkouts(userId) {
@@ -365,59 +249,37 @@ function openWorkoutAssignModal(dateStr) {
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + dateStr; document.getElementById('modalWorkoutDateLabel').dataset.date = dateStr;
     document.getElementById('workoutTitle').value = ''; document.getElementById('workoutDesc').value = '';
     document.querySelector('#modal-workout-assign h3').innerText = "🏋️ ANTRENMAN YAZ";
-    
-    // YETKİ KONTROLÜ
     const chk = document.getElementById('saveAsTemplate');
     const selectBox = document.getElementById('templateSelector');
-    
     if (currentUserRole === 'admin') {
-        if (chk) chk.parentElement.style.display = 'flex';
-        if (selectBox) selectBox.style.display = 'block';
-        chk.checked = false;
+        if (chk) chk.parentElement.style.display = 'flex'; if (selectBox) selectBox.style.display = 'block'; chk.checked = false;
     } else {
-        if (chk) chk.parentElement.style.display = 'none';
-        if (selectBox) selectBox.style.display = 'none';
-        activeStudentId = currentUserId;
+        if (chk) chk.parentElement.style.display = 'none'; if (selectBox) selectBox.style.display = 'none'; activeStudentId = currentUserId;
     }
-
-    if (selectBox) selectBox.value = "";
-    document.getElementById('modal-workout-assign').style.display = 'flex';
+    if (selectBox) selectBox.value = ""; document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
 function editWorkout() {
     if (!activeStudentId && !openWorkoutId) return; 
     if(currentUserRole !== 'admin' && !activeStudentId) activeStudentId = currentUserId;
-
-    const currentTitle = document.getElementById('viewWorkoutTitle').innerText; 
-    const currentDesc = document.getElementById('viewWorkoutDesc').innerText; 
-    const currentDate = document.getElementById('viewWorkoutDate').innerText;
-    
+    const currentTitle = document.getElementById('viewWorkoutTitle').innerText; const currentDesc = document.getElementById('viewWorkoutDesc').innerText; const currentDate = document.getElementById('viewWorkoutDate').innerText;
     closeWorkoutViewModal();
-    
     document.getElementById('modalWorkoutDateLabel').innerText = "Tarih: " + currentDate; document.getElementById('modalWorkoutDateLabel').dataset.date = currentDate;
     document.getElementById('workoutTitle').value = currentTitle; document.getElementById('workoutDesc').value = currentDesc;
-    document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE";
-    editingWorkoutId = openWorkoutId;
-    
+    document.querySelector('#modal-workout-assign h3').innerText = "✏️ ANTRENMANI DÜZENLE"; editingWorkoutId = openWorkoutId;
     const chk = document.getElementById('saveAsTemplate'); if (chk) chk.parentElement.style.display = 'none';
     const selectBox = document.getElementById('templateSelector'); if (selectBox) selectBox.style.display = 'none';
-    
     document.getElementById('modal-workout-assign').style.display = 'flex';
 }
 
 function closeWorkoutModal() { document.getElementById('modal-workout-assign').style.display = 'none'; editingWorkoutId = null; }
 
 function saveWorkout() {
-    let targetId = activeStudentId;
-    if(currentUserRole !== 'admin') targetId = currentUserId;
-    if (!targetId) return;
-
+    let targetId = activeStudentId; if(currentUserRole !== 'admin') targetId = currentUserId; if (!targetId) return;
     const dateStr = document.getElementById('modalWorkoutDateLabel').dataset.date; const title = document.getElementById('workoutTitle').value; const desc = document.getElementById('workoutDesc').value;
     const chk = document.getElementById('saveAsTemplate'); const saveAsTemplate = chk ? chk.checked : false;
     if (!title) return alert("Başlık giriniz.");
-    
     const workoutRef = db.collection('users').doc(targetId).collection('workouts');
-    
     if (editingWorkoutId) {
         workoutRef.doc(editingWorkoutId).update({ title: title, desc: desc }).then(() => { closeWorkoutModal(); });
     } else {
@@ -429,8 +291,7 @@ function saveWorkout() {
 }
 
 function deleteWorkout() {
-    let targetId = activeStudentId; if(currentUserRole !== 'admin') targetId = currentUserId;
-    if (!targetId || !openWorkoutId) return;
+    let targetId = activeStudentId; if(currentUserRole !== 'admin') targetId = currentUserId; if (!targetId || !openWorkoutId) return;
     if (confirm("Silmek istiyor musun?")) { db.collection('users').doc(targetId).collection('workouts').doc(openWorkoutId).delete().then(() => { closeWorkoutViewModal(); }); }
 }
 
@@ -438,14 +299,8 @@ function openWorkoutView(workoutId, title, date, desc, isCompleted, stravaLink, 
     openWorkoutId = workoutId;
     const modal = document.getElementById('modal-workout-view'); modal.style.display = 'flex';
     document.getElementById('viewWorkoutTitle').innerText = title; document.getElementById('viewWorkoutDate').innerText = date; document.getElementById('viewWorkoutDesc').innerText = desc;
-    
     const adminActions = document.getElementById('admin-workout-actions'); 
-    if (currentUserRole === 'admin' || ownerId === currentUserId || (!ownerId && currentUserRole!=='admin')) { 
-        adminActions.style.display = 'flex'; 
-    } else { 
-        adminActions.style.display = 'none'; 
-    }
-
+    if (currentUserRole === 'admin' || ownerId === currentUserId || (!ownerId && currentUserRole!=='admin')) { adminActions.style.display = 'flex'; } else { adminActions.style.display = 'none'; }
     const displayDiv = document.getElementById('workout-report-display'); const formDiv = document.getElementById('workout-report-form'); const btnOpen = document.getElementById('btnOpenReportForm');
     const completed = (isCompleted === true || isCompleted === 'true');
     if (completed) {
@@ -468,17 +323,12 @@ function submitWorkoutReport() {
 }
 function closeWorkoutViewModal() { document.getElementById('modal-workout-view').style.display = 'none'; openWorkoutId = null; editingWorkoutId = null; }
 
-// ==========================================
-// 7. DASHBOARD & ÖĞRENCİ DETAYI (ADMİN)
-// ==========================================
-
-async function loadAdminDashboard() {
+function loadAdminDashboard() {
     const container = document.getElementById('admin-dashboard-container'); if (!container) return;
     container.innerHTML = '<p style="text-align:center;font-size:11px;color:gray;">Veriler taranıyor...</p>';
     const today = new Date(); const yesterday = new Date(today); yesterday.setDate(yesterday.getDate() - 1);
     const todayStr = today.toISOString().slice(0, 10); const yesterdayStr = yesterday.toISOString().slice(0, 10);
     let html = `<div class="dashboard-summary-card"><div class="dashboard-header">GÜNLÜK ÖZET</div>`; let hasAlerts = false;
-    
     db.collection('users').where('role', '!=', 'admin').onSnapshot(snap => {
         let promises = snap.docs.map(async (userDoc) => {
             const userData = userDoc.data(); const uid = userDoc.id;
@@ -491,7 +341,6 @@ async function loadAdminDashboard() {
                 if (w.date === todayStr && !w.isCompleted) { userItems += `<div class="dashboard-item today" onclick="openStudentDetail('${uid}', '${w.date}')"><span class="dashboard-icon today">📅</span><div class="dashboard-text"><strong>${userData.name.split(' ')[0]}</strong> bugün antrenman yapacak.</div></div>`; hasAlerts = true; }
             }); return userItems;
         });
-        
         Promise.all(promises).then(results => {
             html += results.join('');
             if (!hasAlerts) html += `<p style="font-size:12px; color:gray; text-align:center;">Bugün için hareket yok.</p>`;
@@ -504,18 +353,15 @@ async function openStudentDetail(targetUserId, dateToFocus) {
     activeStudentId = targetUserId;
     const userDoc = await db.collection('users').doc(targetUserId).get(); const userData = userDoc.data();
     document.getElementById('student-name').innerText = userData.name; document.getElementById('student-avatar').style.backgroundImage = `url('${userData.photo}')`;
-    
     db.collection('users').doc(targetUserId).collection('my_races').orderBy('date', 'asc').get().then(snap => { 
         let l=''; snap.forEach(d=>{const r=d.data();const [y,m,x]=r.date.split('-');l+=`<div class="my-race-item" style="border-left-color:#4a90e2;"><div class="my-race-date"><div class="my-race-day" style="color:#4a90e2;">${x}</div><div class="my-race-month">${m}</div></div><div style="flex:1"><div style="font-weight:bold; font-size:14px;">${r.name}</div><div style="font-size:11px; color:#888;">${r.category}</div></div></div>`;}); 
         document.getElementById('student-races-list').innerHTML = l || '<p style="font-size:12px;color:gray;">Hedef yok.</p>';
     });
-    
     db.collection('users').doc(targetUserId).collection('workouts').get().then(snap => {
         const studentWorkouts = []; snap.forEach(d => { const dd = d.data(); dd.id = d.id; studentWorkouts.push(dd); });
         renderStudentCalendarWithData(studentWorkouts);
         renderCharts('studentRpeChart', 'studentConsistencyChart', studentWorkouts, 'studentVolumeChart');
     });
-    
     if (dateToFocus) { const [y, m, d] = dateToFocus.split('-'); studentYear = parseInt(y); studentMonth = parseInt(m) - 1; setTimeout(() => clickStudentDate(dateToFocus), 600); }
     switchView('student-detail');
 }
@@ -543,10 +389,6 @@ function renderStudentCalendar() {
 
 function changeStudentMonth(dir) { studentMonth += dir; if(studentMonth < 0) { studentMonth = 11; studentYear--; } else if (studentMonth > 11) { studentMonth = 0; studentYear++; } renderStudentCalendar(); }
 function clickStudentDate(dateStr) { db.collection('users').doc(activeStudentId).collection('workouts').where('date','==',dateStr).get().then(snap=>{ if(!snap.empty){ const d=snap.docs[0]; const w=d.data(); openWorkoutView(d.id, w.title, w.date, w.desc, w.isCompleted, w.stravaLink, activeStudentId, w.reportRpe, w.reportNote); } else { openWorkoutAssignModal(dateStr); } }); }
-
-// ==========================================
-// 8. YARDIMCI FONKSİYONLAR (TAKVİM, HABER, USER)
-// ==========================================
 
 function loadUsers() {
     db.collection('users').orderBy('joinedAt', 'desc').onSnapshot(snapshot => {
@@ -699,3 +541,15 @@ function showUpcomingRaces() {
 }
 
 document.addEventListener('click', (e) => { if (e.target && e.target.id == 'btnLogin') loginWithGoogle(); });
+
+// GÜVENLİK SİGORTASI (SAFETY NET - Kilitlenmeyi Önler)
+setTimeout(() => {
+    const splash = document.getElementById('splash-screen');
+    if (splash && !splash.classList.contains('hidden')) {
+        console.warn("Safety Net: Uygulama zorla açılıyor...");
+        hideSplashScreen();
+        if(!document.querySelector('.view.active')) {
+            switchView('landing');
+        }
+    }
+}, 4000);
