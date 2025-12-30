@@ -1,4 +1,4 @@
-const CACHE_NAME = 'checkpoint-cache-v2'; // Versiyonu v2 yaptık!
+const CACHE_NAME = 'checkpoint-v4-fix'; // İSMİ DEĞİŞTİRDİM (Telefon eskiyi silsin diye)
 const urlsToCache = [
   './',
   './index.html',
@@ -9,45 +9,42 @@ const urlsToCache = [
   './alternatif.png'
 ];
 
-// 1. Yükleme (Install)
+// 1. KURULUM (Eski sürümü hemen devre dışı bırak)
 self.addEventListener('install', function(event) {
-  // Yeni SW yüklenirken eskisini bekleme, hemen aktif ol
-  self.skipWaiting(); 
+  self.skipWaiting(); // Bekleme yapma, hemen güncelle!
   
   event.waitUntil(
     caches.open(CACHE_NAME)
       .then(function(cache) {
-        console.log('Önbellek v2 açıldı');
+        console.log('Önbellek v4 açıldı');
         return cache.addAll(urlsToCache);
       })
   );
 });
 
-// 2. İstek Yakalama (Fetch) - ÖNCE İNTERNET, SONRA HAFIZA (Network First)
+// 2. İSTEK YAKALAMA (Ağ Öncelikli Strateji - Network First)
 self.addEventListener('fetch', function(event) {
   event.respondWith(
     fetch(event.request)
       .then(function(response) {
-        // İnternetten başarılı cevap gelirse:
-        // 1. Cevabın bir kopyasını al
-        const responseClone = response.clone();
-        
-        // 2. Yeni versiyonu hafızaya kaydet (Gelecek sefer internetsiz kalırsan kullan diye)
-        caches.open(CACHE_NAME).then(function(cache) {
-          cache.put(event.request, responseClone);
-        });
-        
-        // 3. Kullanıcıya canlı veriyi ver
+        // İnternet var! En güncel hali aldık.
+        // Bunu hemen önbelleğe de atalım ki sonra lazım olur.
+        if (response && response.status === 200) {
+            const responseClone = response.clone();
+            caches.open(CACHE_NAME).then(function(cache) {
+                cache.put(event.request, responseClone);
+            });
+        }
         return response;
       })
       .catch(function() {
-        // İnternet yoksa veya hata olursa hafızaya dön
+        // İnternet yoksa önbellekten ver
         return caches.match(event.request);
       })
   );
 });
 
-// 3. Aktivasyon (Activate) - Eski önbellekleri temizle
+// 3. AKTİVASYON (Eski çöpleri temizle)
 self.addEventListener('activate', function(event) {
   const cacheWhitelist = [CACHE_NAME];
   event.waitUntil(
@@ -61,7 +58,6 @@ self.addEventListener('activate', function(event) {
         })
       );
     }).then(() => {
-        // Sayfanın kontrolünü hemen ele al
         return self.clients.claim();
     })
   );
