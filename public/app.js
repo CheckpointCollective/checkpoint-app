@@ -1165,28 +1165,56 @@ function saveNews() {
 }
 
 function updateUIForUser(user, role) {
+    // 1. Profil Resmini Güncelle (Header'daki küçük yuvarlak)
     const profileTrigger = document.getElementById('profile-trigger');
     if (profileTrigger) {
         profileTrigger.classList.add('active');
-        profileTrigger.innerHTML = `<div class="user-avatar-small" style="background-image:url('${user.photoURL}')"></div>`;
+        // Eğer fotoğraf yoksa varsayılan bir ikon göster
+        const photoURL = user.photoURL || 'https://via.placeholder.com/150';
+        profileTrigger.innerHTML = `<div class="user-avatar-small" style="background-image:url('${photoURL}')"></div>`;
     }
     
-    document.querySelector('#view-locker .profile-header h3').innerText = user.displayName;
-    document.querySelector('#view-locker .profile-header .avatar').style.backgroundImage = `url('${user.photoURL}')`;
+    // 2. Locker Sayfasındaki İsim ve Resmi Güncelle
+    // HATA BURADAYDI: Elementleri güvenli seçelim
+    const lockerHeader = document.querySelector('#view-locker .profile-header');
     
-    document.querySelector('.login-prompt').style.display = 'none';
-    document.getElementById('my-races-section').style.display = 'block';
+    if (lockerHeader) {
+        // İsim alanı
+        const nameEl = lockerHeader.querySelector('h3');
+        if (nameEl) nameEl.innerText = user.displayName || "İsimsiz Sporcu";
+        
+        // Avatar alanı
+        const avatarEl = lockerHeader.querySelector('.avatar');
+        if (avatarEl) {
+            const photoURL = user.photoURL || '';
+            avatarEl.style.backgroundImage = `url('${photoURL}')`;
+        }
+    }
+    
+    // 3. Giriş yap uyarısını gizle
+    const loginPrompt = document.querySelector('.login-prompt');
+    if (loginPrompt) loginPrompt.style.display = 'none';
+    
+    // 4. Veri bölümlerini aç
+    const raceSection = document.getElementById('my-races-section');
+    if (raceSection) raceSection.style.display = 'block';
     
     const statsSection = document.getElementById('my-stats-section');
     if (statsSection) statsSection.style.display = 'block';
     
-    document.getElementById('feed-header-card').style.display = 'flex';
+    // 5. Feed Header Kartını Aç
+    const feedHeader = document.getElementById('feed-header-card');
+    if (feedHeader) feedHeader.style.display = 'flex';
     
+    // 6. Admin ise Yönetici Butonu Ekle
     if (role === 'admin') {
-        document.querySelector('.role-badge').innerText = "YÖNETİCİ";
-        document.querySelector('.role-badge').style.background = "#D32F2F";
+        const badge = document.querySelector('.role-badge');
+        if (badge) {
+            badge.innerText = "YÖNETİCİ";
+            badge.style.background = "#D32F2F";
+        }
         
-        if (!document.getElementById('btnAdmin')) {
+        if (!document.getElementById('btnAdmin') && lockerHeader) {
             const btn = document.createElement('button');
             btn.id = 'btnAdmin';
             btn.innerHTML = "⚡ YÖNETİCİ PANELİ";
@@ -1194,13 +1222,16 @@ function updateUIForUser(user, role) {
             btn.style.marginTop = "15px";
             btn.style.background = "#D32F2F";
             btn.onclick = function() { switchView('admin'); };
-            document.querySelector('#view-locker .profile-header').appendChild(btn);
+            lockerHeader.appendChild(btn);
         }
     } else {
-        document.querySelector('.role-badge').innerText = "MEMBER";
+        const badge = document.querySelector('.role-badge');
+        if (badge) badge.innerText = "MEMBER";
     }
     
-    if (!document.getElementById('btnLogout')) {
+    // 7. Çıkış Butonu Ekle
+    const lockerPage = document.getElementById('view-locker');
+    if (lockerPage && !document.getElementById('btnLogout')) {
         const btn = document.createElement('button');
         btn.id = 'btnLogout';
         btn.innerText = "ÇIKIŞ YAP";
@@ -1208,7 +1239,7 @@ function updateUIForUser(user, role) {
         btn.style.marginTop = "10px";
         btn.style.background = "#333";
         btn.onclick = function() { auth.signOut(); };
-        document.getElementById('view-locker').appendChild(btn);
+        lockerPage.appendChild(btn);
     }
 }
 
